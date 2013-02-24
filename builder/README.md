@@ -1,0 +1,2 @@
+`build.py` is the main excecutable file that lists the order of the source files and the destination of the output.
+`build.sublime-build` is the file I use with Sublime Text 2 to initiate the build process.

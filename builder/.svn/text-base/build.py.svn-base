@@ -1,0 +1,43 @@
+# JSBuilder example
+
+# project name (from the root folder)
+copyright = '(C) WebReflection JSBuilder from Falsy Values'
+max_js = 'build/max.js'
+min_js = 'build/min.js'
+
+# file list (from the root/src folder)
+files = [
+    "intro.js",     #beginning of the closure
+    "variables.js", #local scope variables
+    "main.js",      #some application logic
+    "functions.js", #functions declaration
+    "debug.js",     #something useful or evil to debug
+    "outro.js"      #end of the closure
+]
+
+# execute the task
+import JSBuilder
+JSBuilder.compile(
+    copyright,
+    max_js,
+    min_js,
+    files,
+    # optional list of serches
+    [   #mustaches in comments, hell yeah!
+        '/*{namespace}*/'
+    ],
+    # with relative optional list of replaces
+    [
+        'var '  #produce var MyLib = ... 
+        
+        # it could be 'this.'
+        # this.MyLib = ...
+        
+        # it could be 'my.personal.stuff.'
+        # my.personal.stuff.MyLib = ... 
+    ]
+)
+
+# let me read the result ...
+import time
+time.sleep(2)
