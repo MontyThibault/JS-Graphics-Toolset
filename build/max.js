@@ -1,5 +1,5 @@
 /* Created by Monty Thibault
-   Last updated Feb 24, 2013
+   Last updated Mar 23, 2013
    montythibault@gmail.com */
 
 
@@ -11,11 +11,121 @@
 
 var engine = {};
 
+
+
+//////////////////
+// utils.js
+
 // Little shim so that functions that will always be called in a given context
-function context(func, context) {
+engine.context = function(func, context) {
 	return function() {
 		func.apply(context, arguments);
 	};
+};
+
+engine.relativeCoord = function(vec) {
+	vec.x = (vec.x / window.innerWidth) * 2 - 1;
+	vec.y = -(vec.y / window.innerHeight) * 2 + 1;
+
+	return vec;
+};
+
+engine.absoluteCoord = function(vec) {
+	vec.x = (vec.x + 1) / 2 * window.innerWidth;
+	vec.y = (vec.y - 1) / 2 * -window.innerHeight;
+
+	return vec;
+};
+
+engine.intersect = (function() {
+	var _vec = new THREE.Vector3(),
+		_raycaster = new THREE.Raycaster();
+
+	return function(v1, v2, objects) {
+		_raycaster.set(v1, _vec.copy(v2).sub(v1).normalize());
+		return _raycaster.intersectObjects(objects);
+	};
+})();
+
+engine.project = (function() {
+	var _vec = new THREE.Vector3(),
+		_projector = new THREE.Projector();
+
+	return function(v) {
+		return _projector.projectVector(
+			_vec.copy(v), 
+			engine.activePlayer.camera.camera);
+	};
+})();
+
+engine.unproject = (function() {
+	var _vec = new THREE.Vector3(),
+		_projector = new THREE.Projector();
+
+	return function(v) {
+		return _projector.unprojectVector(
+			_vec.copy(v), 
+			engine.activePlayer.camera.camera);
+	};
+})();
+
+engine.raycastMouse = (function() {
+	var _plane = new THREE.Mesh(new THREE.PlaneGeometry(10000, 10000, 1, 1));
+	_plane.rotation.x = -Math.PI / 2;
+	_plane.updateMatrixWorld(); // Or else raycasting doesn't work properly
+
+	return function(objects) {
+		var keyboard = engine.core.keyboard,
+			camera = engine.activePlayer.camera.camera;
+
+		if(!keyboard._mouseE) return false;
+
+		var mouse = new THREE.Vector3(
+			keyboard._mouseE.clientX, 
+			keyboard._mouseE.clientY, 
+			0.5);
+		mouse = engine.relativeCoord(mouse);
+		mouse = engine.unproject(mouse, camera);
+
+		return engine.intersect(
+			camera.matrixWorld.getPosition(), 
+			mouse, 
+			objects || [_plane]);
+	};
+})();
+
+engine.addPoint = function(vector, scale) {
+	var scene = engine.activeGame.scene;
+
+	var cube = new THREE.Mesh(
+		new THREE.CubeGeometry(1, 1, 1),
+		new THREE.MeshBasicMaterial({ color: 0x000000 }));
+	cube.position = vector;
+	cube.scale.multiplyScalar(scale);
+	
+	scene.add(cube);
+
+	return cube;
+};
+
+
+
+//////////////////
+// shaders.js
+
+engine.shaders = {
+	'selection_plane': new THREE.ShaderMaterial({
+		vertexShader: $('#selection_plane_vertex').text(),
+		fragmentShader: $('#selection_plane_fragment').text(),
+		uniforms: {
+			'uThickness': { type: 'f', value: 0.015 },
+			'uColor': { type: "t", value: new THREE.ImageUtils.generateDataTexture(32, 32, new THREE.Color(0x45E2ED)) }
+		}
+	}),
+	'grid_highlight': new THREE.ShaderMaterial({
+		vertexShader: $('#grid_highlight_vertex').text(),
+		fragmentShader: $('#grid_highlight_fragment').text()
+	})
 };
 
 
@@ -91,14 +201,16 @@ engine.Keyboard = (function() {
 			return;
 		}
 
+		console.log(code);
+
 		this._pressed[code] = new Date().getTime();
-		this.searchKeys(this.bindings, 'keyDown', { e: e });
+		this.searchKeys(this.bindings, 'kd', { e: e });
 	};
 
 	Keyboard.prototype._keyup = function(e) {
 		var code = e.charCode || e.keyCode;
 
-		this.searchKeys(this.bindings, 'keyUp', { e: e });
+		this.searchKeys(this.bindings, 'ku', { e: e });
 		delete this._pressed[code];
 	};
 
@@ -110,7 +222,7 @@ engine.Keyboard = (function() {
 		])[e.which - 1];
 
 		this._pressed[button] = new Date().getTime();
-		this.searchKeys(this.bindings, 'mouseDown', { e: e });
+		this.searchKeys(this.bindings, 'md', { e: e });
 	};
 
 	Keyboard.prototype._mouseup = function(e) {
@@ -120,7 +232,7 @@ engine.Keyboard = (function() {
 			'right'
 		])[e.which - 1];
 
-		this.searchKeys(this.bindings, 'mouseUp', { e: e });
+		this.searchKeys(this.bindings, 'mu', { e: e });
 		delete this._pressed[button];
 	};
 
@@ -133,14 +245,19 @@ engine.Keyboard = (function() {
 		e.preventDefault();
 	};
 
+	Keyboard.prototype._focus = function(e) {
+		// Incase the user does something bad and a key gets stuck down
+		this._pressed = {};
+	};
+
 	Keyboard.prototype.update = function() {
-		this.searchKeys(this.bindings, 'update');
+		this.searchKeys(this.bindings, 'u');
 
 		// If the mouse has moved
 		_vec.subVectors(this._mouseAfter, this._mouseBefore);
 		if(_vec.x || _vec.y) {
 			
-			this.searchKeys(this.bindings, 'mouseMove', {
+			this.searchKeys(this.bindings, 'mm', {
 				difference: _vec.clone(),
 				e: this._mouseE
 			});
@@ -151,12 +268,13 @@ engine.Keyboard = (function() {
 
 
 	Keyboard.prototype.initListeners = function() {
-		window.addEventListener('keydown', context(this._keydown, this), false);
-		window.addEventListener('keyup', context(this._keyup, this), false);
-		window.addEventListener('mousedown', context(this._mousedown, this), false);
-		window.addEventListener('mouseup', context(this._mouseup, this), false);
-		window.addEventListener('mousemove', context(this._mousemove, this), false);
+		window.addEventListener('keydown', engine.context(this._keydown, this), false);
+		window.addEventListener('keyup', engine.context(this._keyup, this), false);
+		window.addEventListener('mousedown', engine.context(this._mousedown, this), false);
+		window.addEventListener('mouseup', engine.context(this._mouseup, this), false);
+		window.addEventListener('mousemove', engine.context(this._mousemove, this), false);
 		window.addEventListener('contextmenu', this._contextmenu, false);
+		window.addEventListener('focus', engine.context(this._focus, this), false);
 	};
 
 	return Keyboard;
@@ -204,7 +322,7 @@ engine.Display = (function() {
 	};
 
 	Display.prototype.initListeners = function() {
-		window.addEventListener('resize', context(this.fullscreen, this), false);
+		window.addEventListener('resize', engine.context(this.fullscreen, this), false);
 	};
 
 	return Display;
@@ -218,8 +336,6 @@ engine.Display = (function() {
 engine.Camera = (function() {
 	
 	var _vec = new THREE.Vector3();
-	var _mat = new THREE.Matrix4();
-	var _proj = new THREE.Projector();
 
 	var _plane = new THREE.Mesh(
 		new THREE.PlaneGeometry(10000, 10000, 1, 1),
@@ -242,7 +358,12 @@ engine.Camera = (function() {
 
 	function Camera() {
 
-		this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1e-2, 1e3);
+		this.camera = new THREE.PerspectiveCamera(
+			75, 
+			window.innerWidth / window.innerHeight, 
+			1e-2, 
+			1e3);
+
 		this.camera.position.set(0, 1, 0);
 		this.camera.lookAt(new THREE.Vector3());
 
@@ -265,49 +386,67 @@ engine.Camera = (function() {
 		this.limits();
 		this.initListeners();
 
-		this._mouseDragOld = new THREE.Vector3();
+		var mouseDragOld;
+		this.active = false;
 
 		this.bindings = {
 
-			'^update 87$': context(function(data) {
+			'^u 87$': engine.context(function(data) {
 				this.zoom.scale.multiplyScalar(1 / 1.05);
 				this.limits();
 			}, this),
 
-			'^update 83$': context(function(data) {
+			'^u 83$': engine.context(function(data) {
 				this.zoom.scale.multiplyScalar(1.05);
 				this.limits();
 			}, this),
 
-			'^mouseMove middle$': context(function(data) {
+			'^mm middle$': engine.context(function(data) {
 				var factor = Math.pow(1.01, data.difference.y);
 				this.zoom.scale.multiplyScalar(factor);
 				this.limits();
 			}, this),
 
-			'^mouseMove right$': context(function(data) {
+			'^mm right$': engine.context(function(data) {
 				this.yaw.rotation.y -= data.difference.x / 200;
 				this.pitch.rotation.z += data.difference.y / 200;
 				this.limits();
 			}, this),
 
-			'^mouseMove left$': context(function(data) {
-				_vec.set(
-					Math.cos(this.yaw.rotation.y),
-					0,
-					-Math.sin(this.yaw.rotation.y)
-				);
-				_vec.multiplyScalar(data.difference.y / -30);
-				_vec.multiplyScalar(this.zoom.scale.length() / 25);
-				this.pivot.position.add(_vec);
+			'^md (middle|right)': engine.context(function(data) {
+				this.active = true;
+			}, this),
 
-				_vec.set(
-					Math.cos(this.yaw.rotation.y + (Math.PI / 2)),
-					0,
-					-Math.sin(this.yaw.rotation.y + (Math.PI / 2))
-				);
-				_vec.multiplyScalar(data.difference.x / -30);
-				_vec.multiplyScalar(this.zoom.scale.length() / 25);
+			'^mu (middle|right)': engine.context(function(data) {
+				this.active = false;
+			}, this),
+
+			/////////////////////////////
+
+			'^md left$': engine.context(function(data) {
+				var mouse = engine.raycastMouse()[0];
+				if(mouse) {
+					mouseDragOld = mouse.point;
+					this.active = true;
+				}
+			}, this),
+
+			'^mu left$': engine.context(function(data) {
+				mouseDragOld = undefined;
+				this.active = false;
+			}, this),
+
+			'^u left$': engine.context(function(data) {
+				if(!this.active) return;
+
+				var mouseDragNew = engine.raycastMouse()[0];
+				if(!mouseDragNew) return;
+				mouseDragNew = mouseDragNew.point;
+
+				var dist = this.pivot.position.distanceTo(mouseDragNew);
+
+				_vec.subVectors(mouseDragOld, mouseDragNew);
+				_vec.multiplyScalar(0.3);
 				this.pivot.position.add(_vec);
 			}, this)
 		};
@@ -320,7 +459,7 @@ engine.Camera = (function() {
 	};
 
 	Camera.prototype.limits = function() {
-		if(this.zoom.scale.length() > 50) this.zoom.scale.setLength(50);
+		//if(this.zoom.scale.length() > 50) this.zoom.scale.setLength(50);
 		if(this.pitch.rotation.z > -0.1) this.pitch.rotation.z = -0.1;
 		if(this.pitch.rotation.z < -1.2) this.pitch.rotation.z = -1.2;
 	};
@@ -331,7 +470,7 @@ engine.Camera = (function() {
 	};
 
 	Camera.prototype.initListeners = function() {
-		window.addEventListener('resize', context(this._resize, this), false);
+		window.addEventListener('resize', engine.context(this._resize, this), false);
 	};
 
 	return Camera;
@@ -360,6 +499,8 @@ engine.grid = (function() {
 	///////////////////////////////////////////////////
 	
 	function BooleanGrid(config) {
+		this.config = config;
+
 		this.x = config.x;
 		this.y = config.y;
 
@@ -368,8 +509,8 @@ engine.grid = (function() {
 		this.view = new this.datatype(this.buffer);
 	}
 
-	BooleanGrid.prototype.set = function(vec, value) {
-		var index = (vec.y * this.x) + vec.x;
+	BooleanGrid.prototype.set = function(x, y, value) {
+		var index = (y * this.x) + x;
 
 		var cellIndex = Math.floor(index / 8),
 			bitIndex = index % 8;
@@ -382,13 +523,27 @@ engine.grid = (function() {
 		}
 	};
 
-	BooleanGrid.prototype.get = function(vec) {
-		var index = (vec.y * this.x) + vec.x;
+	BooleanGrid.prototype.get = function(x, y) {
+		var index = (y * this.x) + x;
 
 		var cellIndex = Math.floor(index / 8),
 			bitIndex = index % 8;
 
 		return !!(this.view[cellIndex] & (1 << bitIndex));
+	};
+
+	BooleanGrid.prototype.union = function(other) {
+		if(this.x !== other.x || this.y !== other.y) {
+			console.error('Attempt to union grids with different dimensions');
+			return false;
+		}
+
+		var newgrid = new BooleanGrid(this.config);
+		for(var i = 0; i < newgrid.view.length; i++) {
+			newgrid.view[i] = this.view[i] | other.view[i];
+		}
+
+		return newgrid;
 	};
 
 	/////////////////////////////////////////////////////
@@ -851,6 +1006,296 @@ engine.grid = (function() {
 
 
 //////////////////
+// pathfinding.js
+
+engine.pathfinding = (function() {
+
+	var valid = function(node, grid) {
+		// Do not return nodes that are outside the grid
+		if(node.x < 0 || 
+			node.x >= grid.x ||
+			node.y < 0 ||
+			node.y >= grid.y) {
+			return false;
+		}
+
+		// Do not return nodes that are on obstacles
+		if(grid.get(node.x, node.y)) return false;
+
+		return true;
+	};
+
+	var adjacent = function(source, grid) {
+		var nodes = [], t,
+			xOffset, yOffset;
+
+		for(xOffset = -1; xOffset <= 1; xOffset++) {
+			for(yOffset = -1; yOffset <= 1; yOffset++) {
+
+				// Do not return the source square
+				if(xOffset === 0 && yOffset === 0) continue;
+
+				t = new THREE.Vector2(source.x + xOffset, source.y + yOffset);
+				if(valid(t, grid)) {
+					t.parent = source;
+					nodes.push(t);
+				}
+			}
+		}
+
+		return nodes;
+	};
+	window.a = adjacent;
+
+	// Basically A* minus the heuristic, and a cool name of course.
+	// http://en.wikipedia.org/wiki/Dijkstra's_algorithm
+	function dijkstra(grid, start, end) {
+
+		if(!valid(start, grid) || !valid(end, grid)) return false;
+
+		start.set(Math.round(start.x), Math.round(start.y));
+		end.set(Math.round(end.x), Math.round(end.y));
+
+		var open = [],
+			closed = [start],
+			latest = start;
+
+		var counter = 0;
+
+		while(true) {
+
+			// If we reached the destination
+			if(latest.equals(end)) {
+				break;
+			}
+
+			var children = adjacent(latest, grid);
+			var i, j, a, b, occupied;
+
+			// Add the new nodes to the open list if they're not in it already
+			for(i = 0; i < children.length; i++) {
+				a = children[i];
+				occupied = false;
+
+				for(j = 0; j < open.length; j++) {
+					b = open[j];
+					if(a.equals(b)) {
+						occupied = true;
+						break;
+					}
+				}
+				for(j = 0; j < closed.length; j++) {
+					b = closed[j];
+					if(a.equals(b)) {
+						occupied = true;
+						break;
+					}
+				}
+
+				if(!occupied) {
+					open.push(children[i]);
+				}
+			}
+
+			// If we already checked the whole grid
+			if(!open.length) {
+				return false;
+			}
+
+			open.sort(function(a, b) {
+				//return Math.random() < 0.5;
+				return a.distanceToSquared(end) < b.distanceToSquared(end);
+			});
+
+			if(++counter >= 1) {
+				engine.activePlayer.visualGrid.highlight(open);
+				break;
+			}
+
+			latest = open.shift();
+			closed.push(latest);
+		}
+
+		// Retrace a path
+		var path = [latest];
+
+		while(path[path.length - 1].parent) {
+			path.push(path[path.length - 1].parent);
+		}
+
+		return path;
+	}
+
+	function astar() {
+
+	}
+
+	// World's lamest implementation of Bresenham's line algorithm
+	// http://en.wikipedia.org/wiki/Bresenham's_line_algorithm
+	function direct(grid, start, end) {
+
+		if(!valid(start, grid) || !valid(end, grid)) return false;
+
+		var delta = end.clone().sub(start),
+			slope = delta.y / delta.x;
+
+		var path = [];
+
+		if(Math.abs(delta.x) > Math.abs(delta.y)) {
+			for(var x = 0; x != delta.x; x += (delta.x > 0) ? 1 : -1) {
+				path.push(new THREE.Vector2(x, Math.round(x * slope)).add(start));
+			}
+		} else {
+			for(var y = 0; y != delta.y; y += (delta.y > 0) ? 1 : -1) {
+				path.push(new THREE.Vector2(Math.round(y / slope), y).add(start));
+				
+			}
+		}
+		
+		path.push(end);
+
+		return path;
+	}
+
+	function projectile() {
+
+	}
+
+	return {
+		dijkstra: dijkstra,
+		astar: astar,
+		direct: direct,
+		projectile: projectile
+	};
+})();
+
+
+
+//////////////////
+// visual_grid.js
+
+engine.VisualGrid = (function() {
+		
+	
+
+	function VisualGrid(grid) {
+		var plane = new THREE.PlaneGeometry(grid.x, grid.y, 1, 1);
+
+		plane.applyMatrix(new THREE.Matrix4().makeTranslation(grid.x / 2, grid.y / 2, 0));
+		plane.computeCentroids();
+		plane.computeBoundingBox();
+
+		THREE.Mesh.call(this, plane, engine.shaders['selection_plane']);
+
+		this.rotation.x = -Math.PI / 2;
+
+		/////////////
+
+		this.color = new THREE.Color(0x45E2ED);
+		this.highlight = new THREE.ImageUtils.generateDataTexture(32, 32, this.color);
+		this.material.uniforms.uColor.value = this.highlight;
+
+		this.highlight.magFilter = THREE.NearestFilter;
+		for(var i = 0; i < this.highlight.image.data.length; i++) {
+			this.highlight.image.data[i] = Math.floor(Math.random() * 256);
+		}
+
+		//////////////
+
+		this.startSquare = new THREE.Vector2();
+		this.endSquare = new THREE.Vector2();
+
+		this.bindings = {
+			'^mm$': engine.context(function() {
+				this.clear();
+
+				// Update mouse highlight square
+				var mouse = engine.raycastMouse()[0];
+				if(engine.activePlayer.camera.active) return;
+				if(mouse) {
+
+					//this.highlightSingle(
+					//	new THREE.Vector2(mouse.point.x, -mouse.point.z)
+					//);
+				}
+			}, this),
+
+			'^kd 32$': engine.context(function(e) {
+				var t = engine.raycastMouse()[0].point;
+				this.startSquare.set(t.x, -t.z);
+				this.startSquare = this.snap(this.startSquare);
+
+				this.endSquare.copy(this.startSquare);
+
+				//console.log(this.startSquare, this.endSquare);
+				var route = engine.pathfinding.dijkstra(grid, this.startSquare, this.endSquare);
+				//var route = engine.pathfinding.direct(grid, this.startSquare, this.endSquare);
+				//this.highlight(route);
+			}, this),
+
+			'^mm 32$': engine.context(function(e) {
+				var t = engine.raycastMouse()[0].point;
+				this.endSquare.set(t.x, -t.z);
+				this.endSquare = this.snap(this.endSquare);
+				this.clear();
+				//console.log(this.startSquare, this.endSquare);
+				var route = engine.pathfinding.dijkstra(grid, this.startSquare, this.endSquare);
+				//var route = engine.pathfinding.direct(grid, this.startSquare, this.endSquare);
+				//if(!route) return;
+				
+				//this.clear();
+				//this.highlight(route);
+			}, this)
+		};
+	}
+
+	VisualGrid.prototype = Object.create(THREE.Mesh.prototype);
+	VisualGrid.prototype.constructor = VisualGrid;
+
+	VisualGrid.prototype.clear = function() {
+		while(this.children.length) {
+			this.remove(this.children[0]);
+		}
+	};
+
+	VisualGrid.prototype.snap = function(vec) {
+		return vec.set(
+			Math.round(vec.x + 0.5) - 1,
+			Math.round(vec.y + 0.5) - 1,
+			0.001
+		);
+	};
+
+	// VisualGrid.prototype.highlightSingle = function(vec, color) {
+	// 	var highlight = new THREE.Mesh(
+	// 		_highlightSquare,
+	// 		engine.shaders['grid_highlight']
+	// 	);
+
+	// 	highlight.position.copy(vec);
+	// 	this.snap(highlight.position);
+	// 	highlight.position.x += 0.5;
+	// 	highlight.position.y += 0.5;
+
+	// 	this.add(highlight);
+
+	// 	return highlight;
+	// };
+
+	// VisualGrid.prototype.highlight = function(vecs, color) {
+	// 	for(var i = 0; i < vecs.length; i++) {
+	// 		this.highlightSingle(vecs[i]);
+	// 	}
+	// };
+
+
+	return VisualGrid;
+
+})();
+
+
+
+//////////////////
 // terrain.js
 
 engine.Terrain = (function() {
@@ -861,39 +1306,31 @@ engine.Terrain = (function() {
 
 	Terrain.prototype.generateTerrain = function() {
 
-		//var shader = new THREE.MeshNormalMaterial();
+		// var shader = new THREE.ShaderMaterial({
+		// 	vertexShader: $('#shaderVertex').text(),
+		// 	fragmentShader: $('#shaderFragment').text(),
+		// 	uniforms: {
+		// 		'thickness': { type: 'f', value: 0.015 }
+		// 	}
+		// });
 
-		var shader = new THREE.ShaderMaterial({
-			vertexShader: $('#shaderVertex').text(),
-			fragmentShader: $('#shaderFragment').text(),
-			uniforms: {
-				'thickness': { type: 'f', value: 0.025 }
-			}
-		});
+		// var plane = new THREE.Mesh(
+		// 	new THREE.PlaneGeometry(this.grid.x, this.grid.y, 1, 1),
+		// 	shader
+		// );
+		// plane.rotation.x = -Math.PI / 2;
 
-		//mesh.geometry.faceVertexUvs
+		// console.log(this.grid);
 
-		console.log(this.grid.x);
-
-		var plane = new THREE.Mesh(
-			new THREE.PlaneGeometry(this.grid.x * 10, this.grid.y * 10, 1, 1),
-			//new THREE.SphereGeometry(0.07, 100, 100),
-			shader
-			//new THREE.MeshBasicMaterial({ color: 0x555555, wireframe: true, wireframeLinewidth: 10 })
-		);
-		plane.rotation.x = -Math.PI / 2;
-
-		console.log(this.grid);
-
-		plane.geometry.faceVertexUvs[0][0] = [
-			new THREE.Vector2(0, 0),
-			new THREE.Vector2(0, this.grid.y),
-			new THREE.Vector2(this.grid.x, this.grid.y),
-			new THREE.Vector2(this.grid.x, 0)
-		];
+		// plane.geometry.faceVertexUvs[0][0] = [
+		// 	new THREE.Vector2(0, 0),
+		// 	new THREE.Vector2(0, this.grid.y),
+		// 	new THREE.Vector2(this.grid.x, this.grid.y),
+		// 	new THREE.Vector2(this.grid.x, 0)
+		// ];
 
 
-		return plane;
+		// return plane;
 	};
 
 	return Terrain;
@@ -946,7 +1383,9 @@ engine.Game = (function() {
 	}
 
 	Game.prototype.update = function() {
-
+		for(var i = 0; i < this.players.length; i++) {
+			this.players[i].update();
+		}
 	};
 
 	return Game;
@@ -970,12 +1409,14 @@ engine.player = (function() {
 	}
 
 	Player.prototype.init = function(game) {
-		this.structureGrid = new engine.grid.NumberGrid({
-			x: game.terrain.grid.x,
-			y: game.terrain.grid.y,
-			datatype: window.Uint8Array
-		});
+		// this.structureGrid = new engine.grid.NumberGrid({
+		// 	x: game.terrain.grid.x,
+		// 	y: game.terrain.grid.y,
+		// 	datatype: window.Uint8Array
+		// });
 	};
+
+	Player.prototype.update = function() {};
 
 	/////////////////////////////////
 
@@ -997,6 +1438,18 @@ engine.player = (function() {
 
 	Human.prototype = Object.create(Player.prototype);
 	Human.prototype.constructor = Human;
+
+	Human.prototype.init = function(game) {
+		Player.prototype.init.call(this, game);
+
+		this.visualGrid = new engine.VisualGrid(game.terrain.grid);
+		$.extend(this.bindings, this.visualGrid.bindings);
+		this.privateScene.add(this.visualGrid);
+	};
+
+	Human.prototype.update = function() {
+		//this.visualGrid.update();
+	};
 
 	/////////////////////////////////
 
@@ -1031,14 +1484,19 @@ engine.player = (function() {
 //////////////////
 // main.js
 
+engine.activeGame = null;
+engine.activePlayer = null;
+engine.core = {};
+
 (function main(engine) {
+	window.engine = engine; // Testing
+
 	var keyboard = new engine.Keyboard();
 	var display = new engine.Display();
 
-	var sampleMap = new engine.grid.NumberGrid({
-		x: 64,
-		y: 64,
-		datatype: window.Uint8Array
+	var sampleMap = new engine.grid.BooleanGrid({
+		x: 32,
+		y: 32
 	});
 	var terrain = new engine.Terrain(sampleMap);
 
@@ -1047,13 +1505,29 @@ engine.player = (function() {
 	var game = new engine.Game(terrain, [player]);
 	game.scene.add(player.privateScene);
 	keyboard.addBindings(player.bindings);
-	player.camera.addHelpers(game.scene);
+	//player.camera.addHelpers(game.scene);
+
+
+	engine.core.keyboard = keyboard;
+	engine.core.display = display;
+	engine.activeGame = game;
+	engine.activePlayer = player;
+
+
+	window.player = player;
+	window.keyboard = keyboard;
+	window.game = game;
+
+	//var cube = engine.addPoint(new THREE.Vector3(), 0.1);
+	//window.x = new THREE.DataTexture
 
 	(function frame() {
 		keyboard.update();
+		game.scene.updateMatrixWorld();
 		game.update();
+
 		display.render(game.scene, player.camera.camera);
-	
+		
 		window.requestAnimationFrame(frame);
 	})();
 })(engine);

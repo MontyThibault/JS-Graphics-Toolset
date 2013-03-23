@@ -35,7 +35,7 @@ engine.Display = (function() {
 	};
 
 	Display.prototype.initListeners = function() {
-		window.addEventListener('resize', context(this.fullscreen, this), false);
+		window.addEventListener('resize', engine.context(this.fullscreen, this), false);
 	};
 
 	return Display;

@@ -14,7 +14,9 @@ engine.Game = (function() {
 	}
 
 	Game.prototype.update = function() {
-
+		for(var i = 0; i < this.players.length; i++) {
+			this.players[i].update();
+		}
 	};
 
 	return Game;

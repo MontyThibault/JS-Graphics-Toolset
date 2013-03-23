@@ -1,8 +1,6 @@
 engine.Camera = (function() {
 	
 	var _vec = new THREE.Vector3();
-	var _mat = new THREE.Matrix4();
-	var _proj = new THREE.Projector();
 
 	var _plane = new THREE.Mesh(
 		new THREE.PlaneGeometry(10000, 10000, 1, 1),
@@ -25,7 +23,12 @@ engine.Camera = (function() {
 
 	function Camera() {
 
-		this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1e-2, 1e3);
+		this.camera = new THREE.PerspectiveCamera(
+			75, 
+			window.innerWidth / window.innerHeight, 
+			1e-2, 
+			1e3);
+
 		this.camera.position.set(0, 1, 0);
 		this.camera.lookAt(new THREE.Vector3());
 
@@ -48,49 +51,67 @@ engine.Camera = (function() {
 		this.limits();
 		this.initListeners();
 
-		this._mouseDragOld = new THREE.Vector3();
+		var mouseDragOld;
+		this.active = false;
 
 		this.bindings = {
 
-			'^update 87$': context(function(data) {
+			'^u 87$': engine.context(function(data) {
 				this.zoom.scale.multiplyScalar(1 / 1.05);
 				this.limits();
 			}, this),
 
-			'^update 83$': context(function(data) {
+			'^u 83$': engine.context(function(data) {
 				this.zoom.scale.multiplyScalar(1.05);
 				this.limits();
 			}, this),
 
-			'^mouseMove middle$': context(function(data) {
+			'^mm middle$': engine.context(function(data) {
 				var factor = Math.pow(1.01, data.difference.y);
 				this.zoom.scale.multiplyScalar(factor);
 				this.limits();
 			}, this),
 
-			'^mouseMove right$': context(function(data) {
+			'^mm right$': engine.context(function(data) {
 				this.yaw.rotation.y -= data.difference.x / 200;
 				this.pitch.rotation.z += data.difference.y / 200;
 				this.limits();
 			}, this),
 
-			'^mouseMove left$': context(function(data) {
-				_vec.set(
-					Math.cos(this.yaw.rotation.y),
-					0,
-					-Math.sin(this.yaw.rotation.y)
-				);
-				_vec.multiplyScalar(data.difference.y / -30);
-				_vec.multiplyScalar(this.zoom.scale.length() / 25);
-				this.pivot.position.add(_vec);
+			'^md (middle|right)': engine.context(function(data) {
+				this.active = true;
+			}, this),
 
-				_vec.set(
-					Math.cos(this.yaw.rotation.y + (Math.PI / 2)),
-					0,
-					-Math.sin(this.yaw.rotation.y + (Math.PI / 2))
-				);
-				_vec.multiplyScalar(data.difference.x / -30);
-				_vec.multiplyScalar(this.zoom.scale.length() / 25);
+			'^mu (middle|right)': engine.context(function(data) {
+				this.active = false;
+			}, this),
+
+			/////////////////////////////
+
+			'^md left$': engine.context(function(data) {
+				var mouse = engine.raycastMouse()[0];
+				if(mouse) {
+					mouseDragOld = mouse.point;
+					this.active = true;
+				}
+			}, this),
+
+			'^mu left$': engine.context(function(data) {
+				mouseDragOld = undefined;
+				this.active = false;
+			}, this),
+
+			'^u left$': engine.context(function(data) {
+				if(!this.active) return;
+
+				var mouseDragNew = engine.raycastMouse()[0];
+				if(!mouseDragNew) return;
+				mouseDragNew = mouseDragNew.point;
+
+				var dist = this.pivot.position.distanceTo(mouseDragNew);
+
+				_vec.subVectors(mouseDragOld, mouseDragNew);
+				_vec.multiplyScalar(0.3);
 				this.pivot.position.add(_vec);
 			}, this)
 		};
@@ -103,7 +124,7 @@ engine.Camera = (function() {
 	};
 
 	Camera.prototype.limits = function() {
-		if(this.zoom.scale.length() > 50) this.zoom.scale.setLength(50);
+		//if(this.zoom.scale.length() > 50) this.zoom.scale.setLength(50);
 		if(this.pitch.rotation.z > -0.1) this.pitch.rotation.z = -0.1;
 		if(this.pitch.rotation.z < -1.2) this.pitch.rotation.z = -1.2;
 	};
@@ -114,7 +135,7 @@ engine.Camera = (function() {
 	};
 
 	Camera.prototype.initListeners = function() {
-		window.addEventListener('resize', context(this._resize, this), false);
+		window.addEventListener('resize', engine.context(this._resize, this), false);
 	};
 
 	return Camera;

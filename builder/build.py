@@ -8,10 +8,14 @@ min_js = 'build/min.js'
 # file list (from the root/src folder)
 files = [
     'intro.js',
+    'utils.js',
+    'shaders.js',
     'keyboard.js',
     'display.js',
     'camera.js',
     'grid.js',
+    'pathfinding.js',
+    'visual_grid.js',
     'terrain.js',
     'castle.js',
     'game.js',

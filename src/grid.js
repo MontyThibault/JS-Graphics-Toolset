@@ -16,6 +16,8 @@ engine.grid = (function() {
 	///////////////////////////////////////////////////
 	
 	function BooleanGrid(config) {
+		this.config = config;
+
 		this.x = config.x;
 		this.y = config.y;
 
@@ -24,8 +26,8 @@ engine.grid = (function() {
 		this.view = new this.datatype(this.buffer);
 	}
 
-	BooleanGrid.prototype.set = function(vec, value) {
-		var index = (vec.y * this.x) + vec.x;
+	BooleanGrid.prototype.set = function(x, y, value) {
+		var index = (y * this.x) + x;
 
 		var cellIndex = Math.floor(index / 8),
 			bitIndex = index % 8;
@@ -38,13 +40,27 @@ engine.grid = (function() {
 		}
 	};
 
-	BooleanGrid.prototype.get = function(vec) {
-		var index = (vec.y * this.x) + vec.x;
+	BooleanGrid.prototype.get = function(x, y) {
+		var index = (y * this.x) + x;
 
 		var cellIndex = Math.floor(index / 8),
 			bitIndex = index % 8;
 
 		return !!(this.view[cellIndex] & (1 << bitIndex));
+	};
+
+	BooleanGrid.prototype.union = function(other) {
+		if(this.x !== other.x || this.y !== other.y) {
+			console.error('Attempt to union grids with different dimensions');
+			return false;
+		}
+
+		var newgrid = new BooleanGrid(this.config);
+		for(var i = 0; i < newgrid.view.length; i++) {
+			newgrid.view[i] = this.view[i] | other.view[i];
+		}
+
+		return newgrid;
 	};
 
 	/////////////////////////////////////////////////////

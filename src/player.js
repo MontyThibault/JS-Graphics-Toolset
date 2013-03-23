@@ -10,12 +10,14 @@ engine.player = (function() {
 	}
 
 	Player.prototype.init = function(game) {
-		this.structureGrid = new engine.grid.NumberGrid({
-			x: game.terrain.grid.x,
-			y: game.terrain.grid.y,
-			datatype: window.Uint8Array
-		});
+		// this.structureGrid = new engine.grid.NumberGrid({
+		// 	x: game.terrain.grid.x,
+		// 	y: game.terrain.grid.y,
+		// 	datatype: window.Uint8Array
+		// });
 	};
+
+	Player.prototype.update = function() {};
 
 	/////////////////////////////////
 
@@ -37,6 +39,18 @@ engine.player = (function() {
 
 	Human.prototype = Object.create(Player.prototype);
 	Human.prototype.constructor = Human;
+
+	Human.prototype.init = function(game) {
+		Player.prototype.init.call(this, game);
+
+		this.visualGrid = new engine.VisualGrid(game.terrain.grid);
+		$.extend(this.bindings, this.visualGrid.bindings);
+		this.privateScene.add(this.visualGrid);
+	};
+
+	Human.prototype.update = function() {
+		//this.visualGrid.update();
+	};
 
 	/////////////////////////////////
 

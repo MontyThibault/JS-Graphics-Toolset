@@ -66,14 +66,16 @@ engine.Keyboard = (function() {
 			return;
 		}
 
+		console.log(code);
+
 		this._pressed[code] = new Date().getTime();
-		this.searchKeys(this.bindings, 'keyDown', { e: e });
+		this.searchKeys(this.bindings, 'kd', { e: e });
 	};
 
 	Keyboard.prototype._keyup = function(e) {
 		var code = e.charCode || e.keyCode;
 
-		this.searchKeys(this.bindings, 'keyUp', { e: e });
+		this.searchKeys(this.bindings, 'ku', { e: e });
 		delete this._pressed[code];
 	};
 
@@ -85,7 +87,7 @@ engine.Keyboard = (function() {
 		])[e.which - 1];
 
 		this._pressed[button] = new Date().getTime();
-		this.searchKeys(this.bindings, 'mouseDown', { e: e });
+		this.searchKeys(this.bindings, 'md', { e: e });
 	};
 
 	Keyboard.prototype._mouseup = function(e) {
@@ -95,7 +97,7 @@ engine.Keyboard = (function() {
 			'right'
 		])[e.which - 1];
 
-		this.searchKeys(this.bindings, 'mouseUp', { e: e });
+		this.searchKeys(this.bindings, 'mu', { e: e });
 		delete this._pressed[button];
 	};
 
@@ -108,14 +110,19 @@ engine.Keyboard = (function() {
 		e.preventDefault();
 	};
 
+	Keyboard.prototype._focus = function(e) {
+		// Incase the user does something bad and a key gets stuck down
+		this._pressed = {};
+	};
+
 	Keyboard.prototype.update = function() {
-		this.searchKeys(this.bindings, 'update');
+		this.searchKeys(this.bindings, 'u');
 
 		// If the mouse has moved
 		_vec.subVectors(this._mouseAfter, this._mouseBefore);
 		if(_vec.x || _vec.y) {
 			
-			this.searchKeys(this.bindings, 'mouseMove', {
+			this.searchKeys(this.bindings, 'mm', {
 				difference: _vec.clone(),
 				e: this._mouseE
 			});
@@ -126,12 +133,13 @@ engine.Keyboard = (function() {
 
 
 	Keyboard.prototype.initListeners = function() {
-		window.addEventListener('keydown', context(this._keydown, this), false);
-		window.addEventListener('keyup', context(this._keyup, this), false);
-		window.addEventListener('mousedown', context(this._mousedown, this), false);
-		window.addEventListener('mouseup', context(this._mouseup, this), false);
-		window.addEventListener('mousemove', context(this._mousemove, this), false);
+		window.addEventListener('keydown', engine.context(this._keydown, this), false);
+		window.addEventListener('keyup', engine.context(this._keyup, this), false);
+		window.addEventListener('mousedown', engine.context(this._mousedown, this), false);
+		window.addEventListener('mouseup', engine.context(this._mouseup, this), false);
+		window.addEventListener('mousemove', engine.context(this._mousemove, this), false);
 		window.addEventListener('contextmenu', this._contextmenu, false);
+		window.addEventListener('focus', engine.context(this._focus, this), false);
 	};
 
 	return Keyboard;

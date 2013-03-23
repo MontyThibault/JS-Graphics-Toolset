@@ -15,39 +15,11 @@ Controls the THREE.js renderer and canvas element
 
 ### Infrastructure
 
+engine
+	types
+	active
+	core
 
-engine --> player --> game
-engine --> game --> player
-
-
-#### Engine
-The engine provides components, such keypress management, a gameloop, and a rendering pipeline, to the application as a whole.
-
-Engine
-	game
-	players
-
-	render
-	
-#### Game
-The game object is ISOLATED from player interaction. It is a single object that can be shared between all the players in the game. Only publci It provides an interface that the players interact with to make changes to the environment.
-
-Game
-	public scenegraph
-		terrain
-
-		player 1
-		player 2
-		player 3
-
-	update
-
-#### Player
-The player objects store the unique information of each player. Events can happen either through browser interaction for real players, or automated commands for artificial intelligence.
-
-Player
-	private scenegraph
-		camera
-		interface
-
-	update(game)
+game
+	player
+		
