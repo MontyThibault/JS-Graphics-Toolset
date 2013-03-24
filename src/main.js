@@ -19,8 +19,6 @@ engine.core = {};
 	var game = new engine.Game(terrain, [player]);
 	game.scene.add(player.privateScene);
 	keyboard.addBindings(player.bindings);
-	//player.camera.addHelpers(game.scene);
-
 
 	engine.core.keyboard = keyboard;
 	engine.core.display = display;

@@ -4,7 +4,7 @@ engine.shaders = {
 		fragmentShader: $('#selection_plane_fragment').text(),
 		uniforms: {
 			'uThickness': { type: 'f', value: 0.015 },
-			'uColor': { type: "t", value: new THREE.ImageUtils.generateDataTexture(32, 32, new THREE.Color(0x45E2ED)) }
+			'uColor': { type: "t", value: null }
 		}
 	}),
 	'grid_highlight': new THREE.ShaderMaterial({

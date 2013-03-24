@@ -1,5 +1,5 @@
 /* Created by Monty Thibault
-   Last updated Mar 23, 2013
+   Last updated Mar 24, 2013
    montythibault@gmail.com */
 
 
@@ -119,7 +119,7 @@ engine.shaders = {
 		fragmentShader: $('#selection_plane_fragment').text(),
 		uniforms: {
 			'uThickness': { type: 'f', value: 0.015 },
-			'uColor': { type: "t", value: new THREE.ImageUtils.generateDataTexture(32, 32, new THREE.Color(0x45E2ED)) }
+			'uColor': { type: "t", value: null }
 		}
 	}),
 	'grid_highlight': new THREE.ShaderMaterial({
@@ -362,7 +362,7 @@ engine.Camera = (function() {
 			75, 
 			window.innerWidth / window.innerHeight, 
 			1e-2, 
-			1e3);
+			1e4);
 
 		this.camera.position.set(0, 1, 0);
 		this.camera.lookAt(new THREE.Vector3());
@@ -390,7 +390,6 @@ engine.Camera = (function() {
 		this.active = false;
 
 		this.bindings = {
-
 			'^u 87$': engine.context(function(data) {
 				this.zoom.scale.multiplyScalar(1 / 1.05);
 				this.limits();
@@ -484,17 +483,74 @@ engine.Camera = (function() {
 engine.grid = (function() {
 
 	function NumberGrid(config) {
-		this.x = config.x;
-		this.y = config.y;
-		
+		this.box = config.box;
+
 		this.datatype = config.datatype || window.Uint8Array;
-		this.buffer = new ArrayBuffer(this.x * this.y * this.datatype.BYTES_PER_ELEMENT);
+
+		var cells = (this.box.max.x - this.box.min.x + 1) * 
+					(this.box.max.y - this.box.min.y + 1);
+		this.buffer = new ArrayBuffer(cells * this.datatype.BYTES_PER_ELEMENT);
 		this.view = new this.datatype(this.buffer);
 	}
 
-	NumberGrid.prototype.toIndex = function(vec) {
-		return (vec.y * this.x) + vec.x;
+	NumberGrid.prototype.toIndex = function(x, y) {
+		var min = this.box.min;
+		return ((y - min.y) * (this.box.max.x - min.x + 1)) + (x - min.x);
+
+		//return (vec.y * this.x) + vec.x;
 	};
+
+	NumberGrid.prototype.overlap = function(other, transparent, destination) {
+
+		var newgrid = destination || new NumberGrid({
+			box: this.box.clone().union(other),
+			datatype: this.datatype
+		});
+
+		var x, y, val;
+		for(x = newgrid.box.min.x; x <= newgrid.box.max.x; x++) {
+			for(y = newgrid.box.min.y; y <= newgrid.box.max.y; y++) {
+
+				val = this.view[this.toIndex(x, y)];
+				if(val !== undefined && val !== transparent) {
+					newgrid.view[newgrid.toIndex(x, y)] = val;
+					continue;
+				}
+
+				val = other.view[other.toIndex(x, y)];
+				if(val !== undefined) {
+					newgrid.view[newgrid.toIndex(x, y)] = val;
+				}
+			}
+		}
+
+		return newgrid;
+	};
+
+	///////////////////////////////////////////////////
+
+	// Used in conjunction with THREE.DataTexture
+	// Goes [r, g, b, r, g, b, r, g, b, et cetera]
+	// So it must have 3 integers for every pixel
+	function ColorGrid(config) {
+		this.box = config.box;
+
+
+		var cells = (this.box.max.x - this.box.min.x + 1) * 
+					(this.box.max.y - this.box.min.y + 1) * 3;
+
+		this.buffer = new ArrayBuffer(cells);
+		this.view = new Uint8Array(this.buffer);
+	}
+
+	ColorGrid.prototype.toIndex = function(x, y) {
+		var min = this.box.min,
+			pixel = ((y - min.y) * (this.box.max.x - min.x + 1)) + (x - min.x);
+
+		return pixel * 3;
+	};
+
+	ColorGrid.prototype.overlap = NumberGrid.prototype.overlap;
 
 	///////////////////////////////////////////////////
 	
@@ -532,13 +588,13 @@ engine.grid = (function() {
 		return !!(this.view[cellIndex] & (1 << bitIndex));
 	};
 
-	BooleanGrid.prototype.union = function(other) {
+	BooleanGrid.prototype.union = function(other, destination) {
 		if(this.x !== other.x || this.y !== other.y) {
 			console.error('Attempt to union grids with different dimensions');
 			return false;
 		}
 
-		var newgrid = new BooleanGrid(this.config);
+		var newgrid = destination || new BooleanGrid(this.config);
 		for(var i = 0; i < newgrid.view.length; i++) {
 			newgrid.view[i] = this.view[i] | other.view[i];
 		}
@@ -997,6 +1053,7 @@ engine.grid = (function() {
 
 	return {
 		NumberGrid: NumberGrid,
+		ColorGrid: ColorGrid,
 		BooleanGrid: BooleanGrid,
 		Quadtree: Quadtree,
 		Octree: Octree
@@ -1176,7 +1233,7 @@ engine.pathfinding = (function() {
 
 engine.VisualGrid = (function() {
 		
-	
+	var _highlightSquare = new THREE.PlaneGeometry(1, 1, 1, 1);
 
 	function VisualGrid(grid) {
 		var plane = new THREE.PlaneGeometry(grid.x, grid.y, 1, 1);
@@ -1191,16 +1248,31 @@ engine.VisualGrid = (function() {
 
 		/////////////
 
-		this.color = new THREE.Color(0x45E2ED);
-		this.highlight = new THREE.ImageUtils.generateDataTexture(32, 32, this.color);
-		this.material.uniforms.uColor.value = this.highlight;
+		// this.defaultColor = new THREE.Color(0x45E2ED);
+		// this.highlight = new THREE.ImageUtils.generateDataTexture(32, 32, this.defaultColor);
+		// this.material.uniforms.uColor.value = this.highlight;
 
-		this.highlight.magFilter = THREE.NearestFilter;
-		for(var i = 0; i < this.highlight.image.data.length; i++) {
-			this.highlight.image.data[i] = Math.floor(Math.random() * 256);
-		}
+		// this.highlight.magFilter = THREE.NearestFilter;
+		// for(var i = 0; i < this.highlight.image.data.length; i++) {
+		// 	this.highlight.image.data[i] = Math.floor(Math.random() * 256);
+		// }
 
 		//////////////
+
+		this.colorData = new engine.grid.ColorGrid({
+			box: new THREE.Box2(
+				new THREE.Vector2(0, 0), 
+				new THREE.Vector2(32, 32))
+		});
+
+		this.clear();
+
+		this.texture = new THREE.DataTexture(this.colorData.view, 32, 32, THREE.RGBFormat);
+		this.material.uniforms.uColor.value = this.texture;
+
+		this.texture.needsUpdate = true;
+
+		/////////////
 
 		this.startSquare = new THREE.Vector2();
 		this.endSquare = new THREE.Vector2();
@@ -1213,10 +1285,9 @@ engine.VisualGrid = (function() {
 				var mouse = engine.raycastMouse()[0];
 				if(engine.activePlayer.camera.active) return;
 				if(mouse) {
-
-					//this.highlightSingle(
-					//	new THREE.Vector2(mouse.point.x, -mouse.point.z)
-					//);
+					this.highlightSingle(
+						new THREE.Vector2(mouse.point.x, -mouse.point.z)
+					);
 				}
 			}, this),
 
@@ -1228,9 +1299,9 @@ engine.VisualGrid = (function() {
 				this.endSquare.copy(this.startSquare);
 
 				//console.log(this.startSquare, this.endSquare);
-				var route = engine.pathfinding.dijkstra(grid, this.startSquare, this.endSquare);
-				//var route = engine.pathfinding.direct(grid, this.startSquare, this.endSquare);
-				//this.highlight(route);
+				//var route = engine.pathfinding.dijkstra(grid, this.startSquare, this.endSquare);
+				var route = engine.pathfinding.direct(grid, this.startSquare, this.endSquare);
+				this.highlightGroup(route);
 			}, this),
 
 			'^mm 32$': engine.context(function(e) {
@@ -1239,12 +1310,12 @@ engine.VisualGrid = (function() {
 				this.endSquare = this.snap(this.endSquare);
 				this.clear();
 				//console.log(this.startSquare, this.endSquare);
-				var route = engine.pathfinding.dijkstra(grid, this.startSquare, this.endSquare);
-				//var route = engine.pathfinding.direct(grid, this.startSquare, this.endSquare);
+				//var route = engine.pathfinding.dijkstra(grid, this.startSquare, this.endSquare);
+				var route = engine.pathfinding.direct(grid, this.startSquare, this.endSquare);
 				//if(!route) return;
 				
 				//this.clear();
-				//this.highlight(route);
+				this.highlightGroup(route);
 			}, this)
 		};
 	}
@@ -1256,6 +1327,21 @@ engine.VisualGrid = (function() {
 		while(this.children.length) {
 			this.remove(this.children[0]);
 		}
+
+		for(var i = 0; i < this.colorData.view.length; i += 3) {
+			this.colorData.view[i] = 23;
+			this.colorData.view[i + 1] = 100;
+			this.colorData.view[i + 2] = 75;
+		}
+
+		var index = this.colorData.toIndex(0, 0);
+		this.colorData.view[index] = 127;
+		this.colorData.view[index + 1] = 142;
+		this.colorData.view[index + 2] = 207;
+
+		//console.log(this.texture);
+		//window.x = this.texture;
+		this.texture && (this.texture.needsUpdate = true);
 	};
 
 	VisualGrid.prototype.snap = function(vec) {
@@ -1266,27 +1352,29 @@ engine.VisualGrid = (function() {
 		);
 	};
 
-	// VisualGrid.prototype.highlightSingle = function(vec, color) {
-	// 	var highlight = new THREE.Mesh(
-	// 		_highlightSquare,
-	// 		engine.shaders['grid_highlight']
-	// 	);
+	VisualGrid.prototype.update = function() {};
 
-	// 	highlight.position.copy(vec);
-	// 	this.snap(highlight.position);
-	// 	highlight.position.x += 0.5;
-	// 	highlight.position.y += 0.5;
+	VisualGrid.prototype.highlightSingle = function(vec, color) {
+		var highlight = new THREE.Mesh(
+			_highlightSquare,
+			engine.shaders['grid_highlight']
+		);
 
-	// 	this.add(highlight);
+		highlight.position.copy(vec);
+		this.snap(highlight.position);
+		highlight.position.x += 0.5;
+		highlight.position.y += 0.5;
 
-	// 	return highlight;
-	// };
+		this.add(highlight);
 
-	// VisualGrid.prototype.highlight = function(vecs, color) {
-	// 	for(var i = 0; i < vecs.length; i++) {
-	// 		this.highlightSingle(vecs[i]);
-	// 	}
-	// };
+		return highlight;
+	};
+
+	VisualGrid.prototype.highlightGroup = function(vecs, color) {
+		for(var i = 0; i < vecs.length; i++) {
+			this.highlightSingle(vecs[i]);
+		}
+	};
 
 
 	return VisualGrid;
@@ -1448,7 +1536,7 @@ engine.player = (function() {
 	};
 
 	Human.prototype.update = function() {
-		//this.visualGrid.update();
+		this.visualGrid.update();
 	};
 
 	/////////////////////////////////
@@ -1505,8 +1593,6 @@ engine.core = {};
 	var game = new engine.Game(terrain, [player]);
 	game.scene.add(player.privateScene);
 	keyboard.addBindings(player.bindings);
-	//player.camera.addHelpers(game.scene);
-
 
 	engine.core.keyboard = keyboard;
 	engine.core.display = display;

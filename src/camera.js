@@ -27,7 +27,7 @@ engine.Camera = (function() {
 			75, 
 			window.innerWidth / window.innerHeight, 
 			1e-2, 
-			1e3);
+			1e4);
 
 		this.camera.position.set(0, 1, 0);
 		this.camera.lookAt(new THREE.Vector3());
@@ -55,7 +55,6 @@ engine.Camera = (function() {
 		this.active = false;
 
 		this.bindings = {
-
 			'^u 87$': engine.context(function(data) {
 				this.zoom.scale.multiplyScalar(1 / 1.05);
 				this.limits();

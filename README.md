@@ -5,12 +5,16 @@ A python script merges all of the files from the `src/` folder into a single fil
 
 # Module Index
 ### Keyboard.js
-Handles keypress events and excecutes callbacks
+Handles browser events and executes callbacks
 
-### Renderer.js
-Controls the THREE.js renderer and canvas element
+### Display.js
+Handles THREE.js renderer and canvas DOM element
 
 ### Camera.js
+Handles controls for using the camera
+
+### Game.js
+
 
 
 ### Infrastructure
@@ -23,3 +27,15 @@ engine
 game
 	player
 		
+
+### visual_grid.js
+Links between game data and user interface
+
+Goals:
+	- MODULAR! (whatever that means)
+		- layers
+
+	- dynamic content
+	- user interactivity
+
+cursor --> terrain --> building occupancy --> highlights

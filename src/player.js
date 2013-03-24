@@ -49,7 +49,7 @@ engine.player = (function() {
 	};
 
 	Human.prototype.update = function() {
-		//this.visualGrid.update();
+		this.visualGrid.update();
 	};
 
 	/////////////////////////////////

@@ -1,17 +1,74 @@
 engine.grid = (function() {
 
 	function NumberGrid(config) {
-		this.x = config.x;
-		this.y = config.y;
-		
+		this.box = config.box;
+
 		this.datatype = config.datatype || window.Uint8Array;
-		this.buffer = new ArrayBuffer(this.x * this.y * this.datatype.BYTES_PER_ELEMENT);
+
+		var cells = (this.box.max.x - this.box.min.x + 1) * 
+					(this.box.max.y - this.box.min.y + 1);
+		this.buffer = new ArrayBuffer(cells * this.datatype.BYTES_PER_ELEMENT);
 		this.view = new this.datatype(this.buffer);
 	}
 
-	NumberGrid.prototype.toIndex = function(vec) {
-		return (vec.y * this.x) + vec.x;
+	NumberGrid.prototype.toIndex = function(x, y) {
+		var min = this.box.min;
+		return ((y - min.y) * (this.box.max.x - min.x + 1)) + (x - min.x);
+
+		//return (vec.y * this.x) + vec.x;
 	};
+
+	NumberGrid.prototype.overlap = function(other, transparent, destination) {
+
+		var newgrid = destination || new NumberGrid({
+			box: this.box.clone().union(other),
+			datatype: this.datatype
+		});
+
+		var x, y, val;
+		for(x = newgrid.box.min.x; x <= newgrid.box.max.x; x++) {
+			for(y = newgrid.box.min.y; y <= newgrid.box.max.y; y++) {
+
+				val = this.view[this.toIndex(x, y)];
+				if(val !== undefined && val !== transparent) {
+					newgrid.view[newgrid.toIndex(x, y)] = val;
+					continue;
+				}
+
+				val = other.view[other.toIndex(x, y)];
+				if(val !== undefined) {
+					newgrid.view[newgrid.toIndex(x, y)] = val;
+				}
+			}
+		}
+
+		return newgrid;
+	};
+
+	///////////////////////////////////////////////////
+
+	// Used in conjunction with THREE.DataTexture
+	// Goes [r, g, b, r, g, b, r, g, b, et cetera]
+	// So it must have 3 integers for every pixel
+	function ColorGrid(config) {
+		this.box = config.box;
+
+
+		var cells = (this.box.max.x - this.box.min.x + 1) * 
+					(this.box.max.y - this.box.min.y + 1) * 3;
+
+		this.buffer = new ArrayBuffer(cells);
+		this.view = new Uint8Array(this.buffer);
+	}
+
+	ColorGrid.prototype.toIndex = function(x, y) {
+		var min = this.box.min,
+			pixel = ((y - min.y) * (this.box.max.x - min.x + 1)) + (x - min.x);
+
+		return pixel * 3;
+	};
+
+	ColorGrid.prototype.overlap = NumberGrid.prototype.overlap;
 
 	///////////////////////////////////////////////////
 	
@@ -49,13 +106,13 @@ engine.grid = (function() {
 		return !!(this.view[cellIndex] & (1 << bitIndex));
 	};
 
-	BooleanGrid.prototype.union = function(other) {
+	BooleanGrid.prototype.union = function(other, destination) {
 		if(this.x !== other.x || this.y !== other.y) {
 			console.error('Attempt to union grids with different dimensions');
 			return false;
 		}
 
-		var newgrid = new BooleanGrid(this.config);
+		var newgrid = destination || new BooleanGrid(this.config);
 		for(var i = 0; i < newgrid.view.length; i++) {
 			newgrid.view[i] = this.view[i] | other.view[i];
 		}
@@ -514,6 +571,7 @@ engine.grid = (function() {
 
 	return {
 		NumberGrid: NumberGrid,
+		ColorGrid: ColorGrid,
 		BooleanGrid: BooleanGrid,
 		Quadtree: Quadtree,
 		Octree: Octree
