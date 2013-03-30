@@ -2,6 +2,8 @@ engine.Display = (function() {
 
 	function Display() {
 		this.renderer = new THREE.WebGLRenderer({
+			clearColor: 0xF5F5DC,
+			clearAlpha: 1,
 			antialias: true
 		});
 		this.canvas = this.renderer.domElement;

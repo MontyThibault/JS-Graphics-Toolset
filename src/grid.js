@@ -5,15 +5,15 @@ engine.grid = (function() {
 
 		this.datatype = config.datatype || window.Uint8Array;
 
-		var cells = (this.box.max.x - this.box.min.x + 1) * 
-					(this.box.max.y - this.box.min.y + 1);
+		var cells = (this.box.max.x - this.box.min.x) * 
+					(this.box.max.y - this.box.min.y);
 		this.buffer = new ArrayBuffer(cells * this.datatype.BYTES_PER_ELEMENT);
 		this.view = new this.datatype(this.buffer);
 	}
 
 	NumberGrid.prototype.toIndex = function(x, y) {
 		var min = this.box.min;
-		return ((y - min.y) * (this.box.max.x - min.x + 1)) + (x - min.x);
+		return ((y - min.y) * (this.box.max.x - min.x)) + (x - min.x);
 
 		//return (vec.y * this.x) + vec.x;
 	};
@@ -26,8 +26,8 @@ engine.grid = (function() {
 		});
 
 		var x, y, val;
-		for(x = newgrid.box.min.x; x <= newgrid.box.max.x; x++) {
-			for(y = newgrid.box.min.y; y <= newgrid.box.max.y; y++) {
+		for(x = newgrid.box.min.x; x < newgrid.box.max.x; x++) {
+			for(y = newgrid.box.min.y; y < newgrid.box.max.y; y++) {
 
 				val = this.view[this.toIndex(x, y)];
 				if(val !== undefined && val !== transparent) {
@@ -54,8 +54,8 @@ engine.grid = (function() {
 		this.box = config.box;
 
 
-		var cells = (this.box.max.x - this.box.min.x + 1) * 
-					(this.box.max.y - this.box.min.y + 1) * 3;
+		var cells = (this.box.max.x - this.box.min.x) * 
+					(this.box.max.y - this.box.min.y) * 3;
 
 		this.buffer = new ArrayBuffer(cells);
 		this.view = new Uint8Array(this.buffer);
@@ -63,7 +63,7 @@ engine.grid = (function() {
 
 	ColorGrid.prototype.toIndex = function(x, y) {
 		var min = this.box.min,
-			pixel = ((y - min.y) * (this.box.max.x - min.x + 1)) + (x - min.x);
+			pixel = ((y - min.y) * (this.box.max.x - min.x)) + (x - min.x);
 
 		return pixel * 3;
 	};
