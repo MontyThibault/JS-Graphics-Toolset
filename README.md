@@ -1,6 +1,9 @@
 ## Build process
 A python script merges all of the files from the `src/` folder into a single file at `build/max.js`. The script (`builder/build.py`) is automatically called every time I save a file in my editor. Compression is disabled for instantaneous results and debugging.
 
+
+[Link to Page](http://montythibault.github.com/JSGame/)
+
 ---------------------------------------------
 
 #Module Index
