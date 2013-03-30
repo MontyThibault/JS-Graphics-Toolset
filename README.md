@@ -3,39 +3,48 @@ A python script merges all of the files from the `src/` folder into a single fil
 
 ---------------------------------------------
 
-# Module Index
-### Keyboard.js
-Handles browser events and executes callbacks
-
-### Display.js
-Handles THREE.js renderer and canvas DOM element
+#Module Index
+### Main.js
+MAIN! Where all the action happens
 
 ### Camera.js
-Handles controls for using the camera
+Controls camera movement
+
+### Castle.js
+Todo - will be used in the future for creating bases
+
+### Display.js
+Initializes the renderer and makes sure everything is fullscreen
 
 ### Game.js
+A hub for connecting players, terrain, and gamestate
 
+### Grid.js
+Holds types for dealing with grids, octrees, et cetera
 
+### Intro.js
+Opening of the function wrapper
 
-### Infrastructure
+### Outro.js 
+Ending of the function wrapper
 
-engine
-	types
-	active
-	core
+### Keyboard.js
+Handles keyboard and mouse interaction
 
-game
-	player
-		
+### Pathfinding.js
+Implementations of pathfinding algorithms
 
-### visual_grid.js
-Links between game data and user interface
+### Players.js
+All of the different player types (human, AI, websocket...)
 
-Goals:
-	- MODULAR! (whatever that means)
-		- layers
+### Shaders.js
+Custom shaders
 
-	- dynamic content
-	- user interactivity
+### Terrain.js 
+A bit lame right now, but this will be used for generating game terrain in the future
 
-cursor --> terrain --> building occupancy --> highlights
+### Utils.js
+Small THREE.js snippets to make my life easier
+
+### Visual_grid.js
+Grid overlay for data visualization
