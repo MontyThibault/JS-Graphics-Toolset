@@ -1,5 +1,5 @@
 /* Created by Monty Thibault
-   Last updated Mar 30, 2013
+   Last updated Apr 05, 2013
    montythibault@gmail.com */
 
 
@@ -125,8 +125,15 @@ engine.shaders = {
 	'grid_highlight': new THREE.ShaderMaterial({
 		vertexShader: $('#grid_highlight_vertex').text(),
 		fragmentShader: $('#grid_highlight_fragment').text()
-	})
-};
+	}),
+
+
+	// New
+
+	vStandard: $('#vStandard').text(),
+	fOverlayConstant: $('#fOverlayConstant').text(),
+	fOverlayColor: $('#fOverlayColor').text()
+};	
 
 
 
@@ -534,8 +541,8 @@ engine.grid = (function() {
 	// Used in conjunction with THREE.DataTexture
 	// Goes [r, g, b, r, g, b, r, g, b, et cetera]
 	// So it must have 3 integers for every pixel
-	function ColorGrid(config) {
-		this.box = config.box;
+	function ColorGrid(box) {
+		this.box = box;
 
 
 		var cells = (this.box.max.x - this.box.min.x) * 
@@ -1231,162 +1238,164 @@ engine.pathfinding = (function() {
 
 
 //////////////////
-// visual_grid.js
+// overlays.js
 
-engine.VisualGrid = (function() {
-		
-	var _highlightSquare = new THREE.PlaneGeometry(1, 1, 1, 1);
-
+engine.overlays = (function() {
+	
 	var _height = 0;
+	var _translate = new THREE.Matrix4();
 
-	function VisualGrid(grid) {
-		var plane = new THREE.PlaneGeometry(grid.x, grid.y, 1, 1);
+	var s = engine.shaders;
+	
+	function Overlay(box) {
+		this.box = box; // THREE.Box2
+		var size = box.size();
 
-		// Make the plane start at 0, 0 instead of being centered
-		// And increment the height so it doesn't interfere with other grids
-		var translate = new THREE.Matrix4();
-		translate.makeTranslation(grid.x / 2, grid.y / 2, _height += 0.001);
-		plane.applyMatrix(translate);	
+		var plane = new THREE.PlaneGeometry(size.x, size.y, 1, 1);
+
+		// Un-center the geometry so it starts at (0, 0)
+		_translate.makeTranslation(size.x / 2, size.y / 2, 0);
+		plane.applyMatrix(_translate);	
+
+		// Translate the geometry so that it matches the box dimensions
+		// * Also increment the height so it doesn't interfere with other grids
+		_translate.makeTranslation(box.min.x, box.min.y, _height += 0.001);
+		plane.applyMatrix(_translate);	
 
 		plane.computeCentroids();
 		plane.computeBoundingBox();
 
-		var shader = new THREE.ShaderMaterial(engine.shaders.selection_plane);
-
-		THREE.Mesh.call(this, plane, shader);
+		// Shaders are specific to the subtypes
+		THREE.Mesh.call(this, plane, undefined);
 
 		this.rotation.x = -Math.PI / 2;
+	}
 
-		/////////////
+	Overlay.prototype = Object.create(THREE.Mesh.prototype);
+	Overlay.prototype.constructor = Overlay;
 
-		this.colorData = new engine.grid.ColorGrid({
-			box: new THREE.Box2(
-				new THREE.Vector2(0, 0), 
-				new THREE.Vector2(128, 128))
+
+	function Constant(box, color) {
+		Overlay.call(this, box);
+
+		this.material = new THREE.ShaderMaterial({
+			vertexShader: s.vStandard,
+			fragmentShader: s.fOverlayConstant,
+			uniforms: {
+				uThickness: { type: 'f', value: 0.015 },
+				uColor: { type: 'c', value: color }
+			}
 		});
+	}
 
-		this.clear();
+	Constant.prototype = Object.create(Overlay.prototype);
+	Constant.prototype.constructor = Constant;
 
-		this.texture = new THREE.DataTexture(this.colorData.view, 128, 128, 
+
+	function Alpha(box) {
+		Overlay.call(this, box);
+	}
+
+	Alpha.prototype = Object.create(Overlay.prototype);
+	Alpha.prototype.constructor = Alpha;
+
+
+	function Color(box) {
+		Overlay.call(this, box);
+		var size = box.size();
+
+		this.colorData = new engine.grid.ColorGrid(box);
+
+		this.texture = new THREE.DataTexture(
+			this.colorData.view, 
+			size.x, 
+			size.y, 
 			THREE.RGBFormat);
 		this.texture.magFilter = THREE.NearestFilter;
 		this.texture.minFilter = THREE.NearestFilter;
-		this.texture.generateMipmaps = false;
+		this.texture.generateMipmaps = false; // Optimization woohoo!
 
-		this.material.uniforms.uColor = {
-			type: 't',
-			value: this.texture
-		};
+		this.material = new THREE.ShaderMaterial({
+			vertexShader: s.vStandard,
+			fragmentShader: s.fOverlayColor,
+			uniforms: {
+				uThickness: { type: 'f', value: 0.015 },
+				uColor: { type: 't', value: this.texture }
+			}
+		});
 
-		this.texture.needsUpdate = true;
+		this.clearColor = new THREE.Color(0x111111);
 
-		/////////////
+		this.clear(this.clearColor);
 
-		this.startSquare = new THREE.Vector2();
-		this.endSquare = new THREE.Vector2();
+		//////////////////////////////////
 
-		this.bindings = {
-			'^mm$': engine.context(function() {
-				// this.clear();
+		// this.startSquare = new THREE.Vector2();
+		// this.endSquare = new THREE.Vector2();
 
-				// // Update mouse highlight square
-				// var mouse = engine.raycastMouse()[0];
-				// if(engine.activePlayer.camera.active) return;
-				// if(mouse) {
-				// 	this.highlightSingle(
-				// 		new THREE.Vector2(mouse.point.x, -mouse.point.z)
-				// 	);
-				// }
-			}, this),
+		// this.bindings = {
+		// 	'^mm$': engine.context(function() {
+		// 		// this.clear();
 
-			'^kd 32$': engine.context(function(e) {
-				var t = engine.raycastMouse()[0].point;
-				this.startSquare.set(t.x, -t.z);
-				this.startSquare = this.snap(this.startSquare);
+		// 		// // Update mouse highlight square
+		// 		// var mouse = engine.raycastMouse()[0];
+		// 		// if(engine.activePlayer.camera.active) return;
+		// 		// if(mouse) {
+		// 		// 	this.highlightSingle(
+		// 		// 		new THREE.Vector2(mouse.point.x, -mouse.point.z)
+		// 		// 	);
+		// 		// }
+		// 	}, this),
 
-				this.endSquare.copy(this.startSquare);
+		// 	'^kd 32$': engine.context(function(e) {
+		// 		var t = engine.raycastMouse()[0].point;
+		// 		this.startSquare.set(t.x, -t.z);
+		// 		this.startSquare = this.snap(this.startSquare);
 
-				//console.log(this.startSquare, this.endSquare);
-				//var route = engine.pathfinding.dijkstra(grid, this.startSquare, this.endSquare);
-				var route = engine.pathfinding.direct(grid, this.startSquare, this.endSquare);
-				this.highlightGroup(route);
-			}, this),
+		// 		this.endSquare.copy(this.startSquare);
 
-			'^mm 32$': engine.context(function(e) {
-				var t = engine.raycastMouse()[0].point;
-				this.endSquare.set(t.x, -t.z);
-				this.endSquare = this.snap(this.endSquare);
-				this.clear();
-				//console.log(this.startSquare, this.endSquare);
-				//var route = engine.pathfinding.dijkstra(grid, this.startSquare, this.endSquare);
-				var route = engine.pathfinding.direct(grid, this.startSquare, this.endSquare);
-				//if(!route) return;
+		// 		//console.log(this.startSquare, this.endSquare);
+		// 		//var route = engine.pathfinding.dijkstra(grid, this.startSquare, this.endSquare);
+		// 		var route = engine.pathfinding.direct(grid, this.startSquare, this.endSquare);
+		// 		this.highlightGroup(route);
+		// 	}, this),
+
+		// 	'^mm 32$': engine.context(function(e) {
+		// 		var t = engine.raycastMouse()[0].point;
+		// 		this.endSquare.set(t.x, -t.z);
+		// 		this.endSquare = this.snap(this.endSquare);
+		// 		this.clear();
+		// 		//console.log(this.startSquare, this.endSquare);
+		// 		//var route = engine.pathfinding.dijkstra(grid, this.startSquare, this.endSquare);
+		// 		var route = engine.pathfinding.direct(grid, this.startSquare, this.endSquare);
+		// 		//if(!route) return;
 				
-				//this.clear();
-				this.highlightGroup(route);
-			}, this)
-		};
+		// 		//this.clear();
+		// 		this.highlightGroup(route);
+		// 	}, this)
+		// };
 	}
 
-	VisualGrid.prototype = Object.create(THREE.Mesh.prototype);
-	VisualGrid.prototype.constructor = VisualGrid;
+	Color.prototype = Object.create(Overlay.prototype);
+	Color.prototype.constructor = Color;
 
-	VisualGrid.prototype.clear = function() {
-		while(this.children.length) {
-			this.remove(this.children[0]);
-		}
-
+	Color.prototype.clear = function(color) {
 		for(var i = 0; i < this.colorData.view.length; i += 3) {
-			this.colorData.view[i] = 45;
-			this.colorData.view[i + 1] = 45;
-			this.colorData.view[i + 2] = 45;
+			this.colorData.view[i] = color.r * 255;
+			this.colorData.view[i + 1] = color.g * 255;
+			this.colorData.view[i + 2] = color.b * 255;
 		}
 
-		var index = this.colorData.toIndex(63, 63);
-		this.colorData.view[index] = 127;
-		this.colorData.view[index + 1] = 142;
-		this.colorData.view[index + 2] = 207;
-
-		//console.log(this.texture);
-		//window.x = this.texture;
-		this.texture && (this.texture.needsUpdate = true);
-	};
-
-	VisualGrid.prototype.snap = function(vec) {
-		return vec.set(
-			Math.round(vec.x + 0.5) - 1,
-			Math.round(vec.y + 0.5) - 1,
-			0.001
-		);
-	};
-
-	VisualGrid.prototype.update = function() {};
-
-	VisualGrid.prototype.highlightSingle = function(vec, color) {
-		var highlight = new THREE.Mesh(
-			_highlightSquare,
-			engine.shaders['grid_highlight']
-		);
-
-		highlight.position.copy(vec);
-		this.snap(highlight.position);
-		highlight.position.x += 0.5;
-		highlight.position.y += 0.5;
-
-		this.add(highlight);
-
-		return highlight;
-	};
-
-	VisualGrid.prototype.highlightGroup = function(vecs, color) {
-		for(var i = 0; i < vecs.length; i++) {
-			this.highlightSingle(vecs[i]);
-		}
+		this.texture.needsUpdate = true;
 	};
 
 
-	return VisualGrid;
-
+	return {
+		Overlay: Overlay, 
+		Constant: Constant,
+		Alpha: Alpha,
+		Color: Color
+	};
 })();
 
 
@@ -1538,13 +1547,13 @@ engine.player = (function() {
 	Human.prototype.init = function(game) {
 		Player.prototype.init.call(this, game);
 
-		this.visualGrid = new engine.VisualGrid(game.terrain.grid);
+		this.visualGrid = new engine.overlays.Color(new THREE.Box2(new THREE.Vector2(), new THREE.Vector2(128, 128)));
 		$.extend(this.bindings, this.visualGrid.bindings);
 		this.privateScene.add(this.visualGrid);
 	};
 
 	Human.prototype.update = function() {
-		this.visualGrid.update();
+		//this.visualGrid.update();
 	};
 
 	/////////////////////////////////

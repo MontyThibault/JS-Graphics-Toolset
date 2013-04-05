@@ -5,6 +5,12 @@ A python script merges all of the files from the `src/` folder into a single fil
 [Link to Page](http://montythibault.github.com/JSGame/)
 
 ---------------------------------------------
+#Todo
+
+- Implement something to connect boxes with grids
+- New update system (including keyboard refactoring)
+
+---------------------------------------------
 
 #Module Index
 ### Main.js

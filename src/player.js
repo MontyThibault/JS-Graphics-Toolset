@@ -43,13 +43,13 @@ engine.player = (function() {
 	Human.prototype.init = function(game) {
 		Player.prototype.init.call(this, game);
 
-		this.visualGrid = new engine.VisualGrid(game.terrain.grid);
+		this.visualGrid = new engine.overlays.Color(new THREE.Box2(new THREE.Vector2(), new THREE.Vector2(128, 128)));
 		$.extend(this.bindings, this.visualGrid.bindings);
 		this.privateScene.add(this.visualGrid);
 	};
 
 	Human.prototype.update = function() {
-		this.visualGrid.update();
+		//this.visualGrid.update();
 	};
 
 	/////////////////////////////////

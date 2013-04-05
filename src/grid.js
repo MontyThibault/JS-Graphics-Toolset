@@ -50,8 +50,8 @@ engine.grid = (function() {
 	// Used in conjunction with THREE.DataTexture
 	// Goes [r, g, b, r, g, b, r, g, b, et cetera]
 	// So it must have 3 integers for every pixel
-	function ColorGrid(config) {
-		this.box = config.box;
+	function ColorGrid(box) {
+		this.box = box;
 
 
 		var cells = (this.box.max.x - this.box.min.x) * 

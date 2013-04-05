@@ -15,7 +15,7 @@ files = [
     'camera.js',
     'grid.js',
     'pathfinding.js',
-    'visual_grid.js',
+    'overlays.js',
     'terrain.js',
     'castle.js',
     'game.js',

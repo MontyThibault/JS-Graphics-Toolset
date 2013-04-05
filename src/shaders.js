@@ -10,5 +10,12 @@ engine.shaders = {
 	'grid_highlight': new THREE.ShaderMaterial({
 		vertexShader: $('#grid_highlight_vertex').text(),
 		fragmentShader: $('#grid_highlight_fragment').text()
-	})
-};
+	}),
+
+
+	// New
+
+	vStandard: $('#vStandard').text(),
+	fOverlayConstant: $('#fOverlayConstant').text(),
+	fOverlayColor: $('#fOverlayColor').text()
+};	
