@@ -41,7 +41,7 @@ Ending of the function wrapper
 Handles keyboard and mouse interaction
 
 ### Pathfinding.js
-Implementations of pathfinding algorithms
+Implementations of pathfinding algorithms (none of which work right now!)
 
 ### Players.js
 All of the different player types (human, AI, websocket...)
@@ -55,5 +55,5 @@ A bit lame right now, but this will be used for generating game terrain in the f
 ### Utils.js
 Small THREE.js snippets to make my life easier
 
-### Visual_grid.js
-Grid overlay for data visualization
+### Overlays.js
+Grid overlays for data visualization
