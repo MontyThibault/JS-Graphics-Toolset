@@ -7,8 +7,10 @@ A python script merges all of the files from the `src/` folder into a single fil
 ---------------------------------------------
 #Todo
 
-- Implement something to connect boxes with grids
-- New update system (including keyboard refactoring)
+- Continue to work on this project
+- Clean up codebase and refactor some of the systems
+- Look into procedural content for terrain
+- Spruce up UI
 
 ---------------------------------------------
 
