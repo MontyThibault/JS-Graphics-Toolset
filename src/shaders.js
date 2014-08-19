@@ -1,21 +1,30 @@
-engine.shaders = {
-	'selection_plane': {
-		vertexShader: $('#selection_plane_vertex').text(),
-		fragmentShader: $('#selection_plane_fragment').text(),
-		uniforms: {
-			'uThickness': { type: 'f', value: 0.015 },
-			'uColor': { type: "t", value: null }
-		}
-	},
-	'grid_highlight': new THREE.ShaderMaterial({
-		vertexShader: $('#grid_highlight_vertex').text(),
-		fragmentShader: $('#grid_highlight_fragment').text()
-	}),
+engine.shaders = (function() {
 
+	var shaders = {},
+		files = [
+		'gridHighlightF',
+		'gridHighlightV',
+		'overlayColorF',
+		'overlayConstantF',
+		'selectionPlaneF',
+		'selectionPlaneV',
+		'standardV'];
 
-	// New
+	function load(callback) {
+		var file = files.shift();
+		engine.loader.path.text('shaders/' + file);
 
-	vStandard: $('#vStandard').text(),
-	fOverlayConstant: $('#fOverlayConstant').text(),
-	fOverlayColor: $('#fOverlayColor').text()
-};	
+		$.get('shaders/' + file, function(text) {
+			shaders[file] = text;
+
+			if(files.length) {
+				load(callback);
+			} else {
+				callback();
+			}
+		});
+	}
+
+	shaders.load = load;
+	return shaders;
+})();

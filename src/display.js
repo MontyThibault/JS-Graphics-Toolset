@@ -1,44 +1,48 @@
-engine.Display = (function() {
+engine.fps = 60;
+engine.display = (function() {
 
-	function Display() {
-		this.renderer = new THREE.WebGLRenderer({
+	var renderer = new THREE.WebGLRenderer({
 			clearColor: 0xF5F5DC,
 			clearAlpha: 1,
 			antialias: true
-		});
-		this.canvas = this.renderer.domElement;
-		this.ctx = this.renderer.context;
+	});
+    
+    var canvas = renderer.domElement,
+        ctx = renderer.context;
 
-		$(document.body).append(this.canvas);
-		this.fullscreen();
+	$(document.body).append(canvas);
 
-		/////////////////////////////////////
+    /////////////////////////////////////
 
-		this.stats = new Stats();
+	var stats = new Stats();
 
-		this.stats.domElement.style.position = 'absolute';
-		this.stats.domElement.style.left = '0px';
-		this.stats.domElement.style.top = '0px';
+	stats.domElement.style.position = 'absolute';
+	stats.domElement.style.left = '0px';
+	stats.domElement.style.top = '0px';
 
-		$(document.body).append(this.stats.domElement);
+	$(document.body).append(stats.domElement);
 
-		//////////////////////////////////////
+	//////////////////////////////////////
 
-		this.initListeners();
+
+	function render(scene, camera) {
+		stats.update();
+		renderer.render(scene, camera);
+	}
+
+	function fullscreen() {
+		renderer.setSize(window.innerWidth, window.innerHeight - 5);
+	}
+	fullscreen();
+
+	function listen() {
+		window.addEventListener('resize', fullscreen, false);
+	}
+	
+	return {
+        render: render,
+        canvas: canvas,
+        listen: listen,
+        ctx: ctx
 	};
-
-	Display.prototype.render = function(scene, camera) {
-		this.stats.update();
-		this.renderer.render(scene, camera);
-	};
-
-	Display.prototype.fullscreen = function() {
-		this.renderer.setSize(window.innerWidth, window.innerHeight - 5);
-	};
-
-	Display.prototype.initListeners = function() {
-		window.addEventListener('resize', engine.context(this.fullscreen, this), false);
-	};
-
-	return Display;
 })();

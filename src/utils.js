@@ -5,6 +5,8 @@ engine.context = function(func, context) {
 	};
 };
 
+// Converts from normal screen space coordinates to relative coordinates, where
+// x's and y's range from -1 to 1 with (0, 0) being the exact center of the screen
 engine.relativeCoord = function(vec) {
 	vec.x = (vec.x / window.innerWidth) * 2 - 1;
 	vec.y = -(vec.y / window.innerHeight) * 2 + 1;
@@ -20,51 +22,54 @@ engine.absoluteCoord = function(vec) {
 };
 
 engine.intersect = (function() {
-	var _vec = new THREE.Vector3(),
-		_raycaster = new THREE.Raycaster();
+	var vec = new THREE.Vector3(),
+		raycaster = new THREE.Raycaster();
 
 	return function(v1, v2, objects) {
-		_raycaster.set(v1, _vec.copy(v2).sub(v1).normalize());
-		return _raycaster.intersectObjects(objects);
+		raycaster.set(v1, vec.copy(v2).sub(v1).normalize());
+		return raycaster.intersectObjects(objects);
 	};
 })();
 
 engine.project = (function() {
-	var _vec = new THREE.Vector3(),
-		_projector = new THREE.Projector();
+	var vec = new THREE.Vector3(),
+		projector = new THREE.Projector();
 
 	return function(v) {
-		return _projector.projectVector(
-			_vec.copy(v), 
-			engine.activePlayer.camera.camera);
+		return projector.projectVector(
+			vec.copy(v), 
+			engine.camera.cam);
 	};
 })();
 
 engine.unproject = (function() {
-	var _vec = new THREE.Vector3(),
-		_projector = new THREE.Projector();
+	var vec = new THREE.Vector3(),
+		projector = new THREE.Projector();
 
 	return function(v) {
-		return _projector.unprojectVector(
-			_vec.copy(v), 
-			engine.activePlayer.camera.camera);
+		return projector.unprojectVector(
+			vec.copy(v), 
+			engine.camera.cam);
 	};
 })();
 
+// Given a set of mouse coordinates in absolute screen space, this will project
+// a ray and return any intersections in the provided list of objects. If no 
+// objects are given, it will default to giant plane. Useful for seeing which
+// 3d objects the mouse is currently hovering over/clicking on.
 engine.raycastMouse = (function() {
-	var _plane = new THREE.Mesh(new THREE.PlaneGeometry(10000, 10000, 1, 1));
-	_plane.rotation.x = -Math.PI / 2;
-	_plane.updateMatrixWorld(); // Or else raycasting doesn't work properly
+	var plane = new THREE.Mesh(new THREE.PlaneGeometry(10000, 10000, 1, 1));
+	plane.rotation.x = -Math.PI / 2; // Flat
+	plane.updateMatrixWorld(); // Or else raycasting doesn't work properly
 
-	return function(objects) {
-		var keyboard = engine.core.keyboard,
-			camera = engine.activePlayer.camera.camera;
+	return function(clientX, clientY, objects) {
+		var camera = engine.camera.cam;
 
-		if(!keyboard._mouseE) return false;
+		if(!engine.userInput.pressed.l) return false;
 
 		var mouse = new THREE.Vector3(
-			keyboard._mouseE.clientX, 
-			keyboard._mouseE.clientY, 
+			clientX, 
+			clientY, 
 			0.5);
 		mouse = engine.relativeCoord(mouse);
 		mouse = engine.unproject(mouse, camera);
@@ -72,20 +77,18 @@ engine.raycastMouse = (function() {
 		return engine.intersect(
 			camera.matrixWorld.getPosition(), 
 			mouse, 
-			objects || [_plane]);
+			objects || [plane]);
 	};
 })();
 
 engine.addPoint = function(vector, scale) {
-	var scene = engine.activeGame.scene;
-
 	var cube = new THREE.Mesh(
 		new THREE.CubeGeometry(1, 1, 1),
 		new THREE.MeshBasicMaterial({ color: 0x000000 }));
 	cube.position = vector;
 	cube.scale.multiplyScalar(scale);
 	
-	scene.add(cube);
+	engine.activeGame.scene.add(cube);
 
 	return cube;
 };

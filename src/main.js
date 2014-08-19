@@ -1,66 +1,44 @@
-engine.activeGame = null;
-engine.activePlayer = null;
-engine.core = {};
-
 (function main(engine) {
 	window.engine = engine; // Testing
+	
+	engine.userInput.listen();
+	engine.display.listen();
+	engine.camera.listen();
 
-	var keyboard = new engine.Keyboard();
-	var display = new engine.Display();
+	engine.shaders.load(function() {
+		engine.loader.fadeOut();
+	});
+
 
 	var sampleMap = new engine.grid.BooleanGrid({
 		x: 128,
 		y: 128
 	});
-	var terrain = new engine.Terrain(sampleMap);
+	
+	var scene = new THREE.Scene();
 
-	var player = new engine.player.Human();
-
-	var game = new engine.Game(terrain, [player]);
-	game.scene.add(player.privateScene);
-	keyboard.addBindings(player.bindings);
-
-	engine.core.keyboard = keyboard;
-	engine.core.display = display;
-	engine.activeGame = game;
-	engine.activePlayer = player;
-
-
-	window.player = player;
-	window.keyboard = keyboard;
-	window.game = game;
-
+    var grid = new engine.overlays.Color(new THREE.Box2(new THREE.Vector2(), new THREE.Vector2(128, 128)));
 
 	function newColors() {
-		var v = player.visualGrid.colorData.view;
+		var v = grid.colorData.view;
 
 		var square = Math.floor(Math.random() * 128 * 128 * 3);
 		v[square] = Math.random() * 255;
 		v[square + 1] = Math.random() * 255;
 		v[square + 2] = Math.random() * 255;
 
-		player.visualGrid.texture.needsUpdate = true;
+		grid.texture.needsUpdate = true;
 	}
 
-	//var cube = engine.addPoint(new THREE.Vector3(), 0.1);
-	//window.x = new THREE.DataTexture
-
-	var start = new Date().getTime(),
-		testTime = 2000;
-
 	(function frame() {
-		keyboard.update();
-		game.scene.updateMatrixWorld();
-		game.update();
-
+		engine.camera.update();
 		newColors();
+		engine.display.render(scene, engine.camera.cam);
 
-		display.render(game.scene, player.camera.camera);
-	
-
-		// if(new Date().getTime() - start < testTime) {
-		// 	frame();
-		// }
-		window.requestAnimationFrame(frame);
+		if(engine.fps === 60) {
+            window.requestAnimationFrame(frame);
+		} else {
+            window.setTimeout(frame, 1000 / engine.fps);
+		}
 	})();
 })(engine);

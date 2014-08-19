@@ -1,141 +1,127 @@
-engine.Camera = (function() {
+engine.camera = (function() {
 	
-	var _vec = new THREE.Vector3();
+	var cam = new THREE.PerspectiveCamera(
+        75, 
+		window.innerWidth / window.innerHeight, 
+		0.01, 
+		1000),
+		
+		zoom = new THREE.Object3D(),
+		yaw = new THREE.Object3D(),
+		pitch = new THREE.Object3D(),
+		pivot = new THREE.Object3D();
+	
+	
+	// As default, set cam one unit away, looking downwards.
+	cam.position.set(0, 1, 0);
+	cam.lookAt(new THREE.Vector3());
+	
+	pivot.position.set(0, 0, 0);
+	zoom.scale.set(10, 10, 10);
+	yaw.rotation.y = 0;
+	pitch.rotation.x = 0;
+	
+	// Each object controls one aspect of the transform. They are parented in
+	// the following order: pivot -> zoom -> yaw -> pitch -> camera
+	pivot.add(zoom);
+	zoom.add(yaw);
+	yaw.add(pitch);
+	pitch.add(cam);
 
-	var _plane = new THREE.Mesh(
-		new THREE.PlaneGeometry(10000, 10000, 1, 1),
-		new THREE.MeshBasicMaterial({ color: 0x00FF00 })
-	);
-	_plane.rotation.x = -Math.PI / 2;
-	_plane.visible = false;
 
-	var _debug = new THREE.Mesh(
-		new THREE.CubeGeometry(1, 1, 1),
-		new THREE.MeshBasicMaterial({ color: 0x00FF00 })
-	);
-	//_debug.scale.multiplyScalar(0.01);
-
-	var _debug2 = new THREE.Mesh(
-		new THREE.CubeGeometry(1, 1, 1),
-		new THREE.MeshNormalMaterial()//new THREE.MeshBasicMaterial({ color: 0x0000FF })
-	);
-
-
-	function Camera() {
-
-		this.camera = new THREE.PerspectiveCamera(
-			75, 
-			window.innerWidth / window.innerHeight, 
-			1e-2, 
-			1e4);
-
-		this.camera.position.set(0, 1, 0);
-		this.camera.lookAt(new THREE.Vector3());
-
-		this.yaw = new THREE.Object3D();
-		this.yaw.rotation.y = 0;
-
-		this.pitch = new THREE.Object3D();
-		this.pitch.rotation.x = 0; //-Math.PI / 2;
-
-		this.zoom = new THREE.Object3D();
-		this.zoom.scale.set(10, 10, 10);
-
-		this.pivot = new THREE.Object3D();
-
-		this.pitch.add(this.camera);
-		this.yaw.add(this.pitch);
-		this.zoom.add(this.yaw);
-		this.pivot.add(this.zoom);
-
-		this.limits();
-		this.initListeners();
-
-		var mouseDragOld;
-		this.active = false;
-
-		this.bindings = {
-			'^u 87$': engine.context(function(data) {
-				this.zoom.scale.multiplyScalar(1 / 1.05);
-				this.limits();
-			}, this),
-
-			'^u 83$': engine.context(function(data) {
-				this.zoom.scale.multiplyScalar(1.05);
-				this.limits();
-			}, this),
-
-			'^mm middle$': engine.context(function(data) {
-				var factor = Math.pow(1.01, data.difference.y);
-				this.zoom.scale.multiplyScalar(factor);
-				this.limits();
-			}, this),
-
-			'^mm right$': engine.context(function(data) {
-				this.yaw.rotation.y -= data.difference.x / 200;
-				this.pitch.rotation.z += data.difference.y / 200;
-				this.limits();
-			}, this),
-
-			'^md (middle|right)': engine.context(function(data) {
-				this.active = true;
-			}, this),
-
-			'^mu (middle|right)': engine.context(function(data) {
-				this.active = false;
-			}, this),
-
-			/////////////////////////////
-
-			'^md left$': engine.context(function(data) {
-				var mouse = engine.raycastMouse()[0];
-				if(mouse) {
-					mouseDragOld = mouse.point;
-					this.active = true;
-				}
-			}, this),
-
-			'^mu left$': engine.context(function(data) {
-				mouseDragOld = undefined;
-				this.active = false;
-			}, this),
-
-			'^u left$': engine.context(function(data) {
-				if(!this.active) return;
-
-				var mouseDragNew = engine.raycastMouse()[0];
-				if(!mouseDragNew) return;
-				mouseDragNew = mouseDragNew.point;
-
-				var dist = this.pivot.position.distanceTo(mouseDragNew);
-
-				_vec.subVectors(mouseDragOld, mouseDragNew);
-				_vec.multiplyScalar(0.3);
-				this.pivot.position.add(_vec);
-			}, this)
-		};
+	function limits() {
+        //if(this.zoom.scale.length() > 50) { this.zoom.scale.setLength(50); }
+		if(pitch.rotation.z > -0.1) { pitch.rotation.z = -0.1; }
+		if(pitch.rotation.z < -1.2) { pitch.rotation.z = -1.2; }
+	}
+	
+	function resize() {
+        cam.aspect = window.innerWidth / window.innerHeight;
+		cam.updateProjectionMatrix();
 	}
 
-	Camera.prototype.addHelpers = function(scene) {
-		scene.add(_debug);
-		scene.add(_debug2);
-		scene.add(_plane);
+	function listen() {
+		window.addEventListener('resize', resize, false);
+	}
+	
+	// Controls
+	var activeButton = false,
+        mouseDragOld,
+        mouseDragNew,
+        intersect;
+	
+	function mousedown(button, e) {
+        if(button === 'l') {
+            // Project the current mouse position to a (mostly) infinite ground 
+            // plane. This allows us to compute camera movements in world space,
+            // rather than screen space.
+            var intersect = engine.raycastMouse(e.clientX, e.clientY)[0];
+            if(intersect) {
+                activeButton = 'l';
+                mouseDragOld = intersect.point;
+            }
+        } else {
+            activeButton = button;
+        }
+	}
+	
+	function mouseup() {
+        activeButton = false;
+        mouseDragOld = undefined;
+	}
+	
+	var clientXOld, clientYOld;
+	function mousemove(button, e) {
+        if((activeButton !== 'r') && (activeButton !== 'm')) { return; }
+        
+        // Calculate how much the mouse have moved in screen space since the 
+        // last frame
+        var diffX = e.clientX - clientXOld,
+            diffY = e.clientY - clientYOld;
+        clientXOld = e.clientX;
+        clientYOld = e.clientY;
+        
+        if(activeButton === 'r') {
+            
+            yaw.rotation.y -= diffX / 200;
+            pitch.rotation.z += diffY / 200;
+            limits();
+     
+        } else if(activeButton === 'm') {
+            
+            var factor = Math.pow(1.01, diffY);
+			zoom.scale.multiplyScalar(factor);
+			limits();
+            
+        }
+	}
+	
+	function update() {
+        if(activeButton !== 'l') { return; }
+        
+        // Find how much the mouse has moved in world space since the last frame
+        intersect = engine.raycastMouse(
+            engine.userInput.clientX, 
+            engine.userInput.clientY)[0];
+        if(!intersect) return;
+        mouseDragNew = intersect.point;
+        
+		var diff = new THREE.Vector3();
+		diff.subVectors(mouseDragOld, mouseDragNew);
+		
+		// Move the camera 30% percent the displacement
+        // This creates a neat smoothing effect. Otherwise it seems jittery
+		diff.multiplyScalar(0.3);
+		pivot.position.add(diff);
+	}
+	
+	engine.userInput.md.push(mousedown);
+	engine.userInput.mu.push(mouseup);
+	engine.userInput.mm.push(mousemove);
+	
+	return {
+        cam: cam,
+        listen: listen,
+        update: update
 	};
-
-	Camera.prototype.limits = function() {
-		//if(this.zoom.scale.length() > 50) this.zoom.scale.setLength(50);
-		if(this.pitch.rotation.z > -0.1) this.pitch.rotation.z = -0.1;
-		if(this.pitch.rotation.z < -1.2) this.pitch.rotation.z = -1.2;
-	};
-
-	Camera.prototype._resize = function() {
-		this.camera.aspect = window.innerWidth / window.innerHeight;
-		this.camera.updateProjectionMatrix();
-	};
-
-	Camera.prototype.initListeners = function() {
-		window.addEventListener('resize', engine.context(this._resize, this), false);
-	};
-
-	return Camera;
 })();

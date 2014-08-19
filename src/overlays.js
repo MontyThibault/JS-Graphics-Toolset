@@ -1,5 +1,5 @@
 engine.overlays = (function() {
-	
+
 	var _height = 0;
 	var _translate = new THREE.Matrix4();
 
@@ -37,8 +37,8 @@ engine.overlays = (function() {
 		Overlay.call(this, box);
 
 		this.material = new THREE.ShaderMaterial({
-			vertexShader: s.vStandard,
-			fragmentShader: s.fOverlayConstant,
+			vertexShader: s.standardV,
+			fragmentShader: s.overlayConstantF,
 			uniforms: {
 				uThickness: { type: 'f', value: 0.015 },
 				uColor: { type: 'c', value: color }
@@ -48,15 +48,6 @@ engine.overlays = (function() {
 
 	Constant.prototype = Object.create(Overlay.prototype);
 	Constant.prototype.constructor = Constant;
-
-
-	function Alpha(box) {
-		Overlay.call(this, box);
-	}
-
-	Alpha.prototype = Object.create(Overlay.prototype);
-	Alpha.prototype.constructor = Alpha;
-
 
 	function Color(box) {
 		Overlay.call(this, box);
@@ -74,8 +65,8 @@ engine.overlays = (function() {
 		this.texture.generateMipmaps = false; // Optimization woohoo!
 
 		this.material = new THREE.ShaderMaterial({
-			vertexShader: s.vStandard,
-			fragmentShader: s.fOverlayColor,
+			vertexShader: s.standardV,
+			fragmentShader: s.overlayColorF,
 			uniforms: {
 				uThickness: { type: 'f', value: 0.015 },
 				uColor: { type: 't', value: this.texture }
@@ -151,7 +142,6 @@ engine.overlays = (function() {
 	return {
 		Overlay: Overlay, 
 		Constant: Constant,
-		Alpha: Alpha,
 		Color: Color
 	};
 })();

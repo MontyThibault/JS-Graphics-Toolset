@@ -44,7 +44,7 @@ def compile(copyright, fullName, minName, files, search=None, replace=None):
     # Quick timestamp
     import time
     date = time.ctime().split()
-    multiCopyright = "/* Created by Monty Thibault\n   Last updated {1} {2}, {4}\n   montythibault@gmail.com */".format(*date)
+    multiCopyright = "/* Created by Monty Thibault\n   Last updated %s %s, %s\n   montythibault@gmail.com */" % (date[1], date[2], date[4])
     
     #copy the list temporarely
     files = files[:]

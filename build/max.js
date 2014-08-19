@@ -1,5 +1,5 @@
 /* Created by Monty Thibault
-   Last updated Apr 05, 2013
+   Last updated Apr 04, 2014
    montythibault@gmail.com */
 
 
@@ -23,6 +23,8 @@ engine.context = function(func, context) {
 	};
 };
 
+// Converts from normal screen space coordinates to relative coordinates, where
+// x's and y's range from -1 to 1 with (0, 0) being the exact center of the screen
 engine.relativeCoord = function(vec) {
 	vec.x = (vec.x / window.innerWidth) * 2 - 1;
 	vec.y = -(vec.y / window.innerHeight) * 2 + 1;
@@ -38,51 +40,54 @@ engine.absoluteCoord = function(vec) {
 };
 
 engine.intersect = (function() {
-	var _vec = new THREE.Vector3(),
-		_raycaster = new THREE.Raycaster();
+	var vec = new THREE.Vector3(),
+		raycaster = new THREE.Raycaster();
 
 	return function(v1, v2, objects) {
-		_raycaster.set(v1, _vec.copy(v2).sub(v1).normalize());
-		return _raycaster.intersectObjects(objects);
+		raycaster.set(v1, vec.copy(v2).sub(v1).normalize());
+		return raycaster.intersectObjects(objects);
 	};
 })();
 
 engine.project = (function() {
-	var _vec = new THREE.Vector3(),
-		_projector = new THREE.Projector();
+	var vec = new THREE.Vector3(),
+		projector = new THREE.Projector();
 
 	return function(v) {
-		return _projector.projectVector(
-			_vec.copy(v), 
-			engine.activePlayer.camera.camera);
+		return projector.projectVector(
+			vec.copy(v), 
+			engine.camera.cam);
 	};
 })();
 
 engine.unproject = (function() {
-	var _vec = new THREE.Vector3(),
-		_projector = new THREE.Projector();
+	var vec = new THREE.Vector3(),
+		projector = new THREE.Projector();
 
 	return function(v) {
-		return _projector.unprojectVector(
-			_vec.copy(v), 
-			engine.activePlayer.camera.camera);
+		return projector.unprojectVector(
+			vec.copy(v), 
+			engine.camera.cam);
 	};
 })();
 
+// Given a set of mouse coordinates in absolute screen space, this will project
+// a ray and return any intersections in the provided list of objects. If no 
+// objects are given, it will default to giant plane. Useful for seeing which
+// 3d objects the mouse is currently hovering over/clicking on.
 engine.raycastMouse = (function() {
-	var _plane = new THREE.Mesh(new THREE.PlaneGeometry(10000, 10000, 1, 1));
-	_plane.rotation.x = -Math.PI / 2;
-	_plane.updateMatrixWorld(); // Or else raycasting doesn't work properly
+	var plane = new THREE.Mesh(new THREE.PlaneGeometry(10000, 10000, 1, 1));
+	plane.rotation.x = -Math.PI / 2; // Flat
+	plane.updateMatrixWorld(); // Or else raycasting doesn't work properly
 
-	return function(objects) {
-		var keyboard = engine.core.keyboard,
-			camera = engine.activePlayer.camera.camera;
+	return function(clientX, clientY, objects) {
+		var camera = engine.camera.cam;
 
-		if(!keyboard._mouseE) return false;
+		if(!engine.userInput.pressed.l) return false;
 
 		var mouse = new THREE.Vector3(
-			keyboard._mouseE.clientX, 
-			keyboard._mouseE.clientY, 
+			clientX, 
+			clientY, 
 			0.5);
 		mouse = engine.relativeCoord(mouse);
 		mouse = engine.unproject(mouse, camera);
@@ -90,20 +95,18 @@ engine.raycastMouse = (function() {
 		return engine.intersect(
 			camera.matrixWorld.getPosition(), 
 			mouse, 
-			objects || [_plane]);
+			objects || [plane]);
 	};
 })();
 
 engine.addPoint = function(vector, scale) {
-	var scene = engine.activeGame.scene;
-
 	var cube = new THREE.Mesh(
 		new THREE.CubeGeometry(1, 1, 1),
 		new THREE.MeshBasicMaterial({ color: 0x000000 }));
 	cube.position = vector;
 	cube.scale.multiplyScalar(scale);
 	
-	scene.add(cube);
+	engine.activeGame.scene.add(cube);
 
 	return cube;
 };
@@ -113,178 +116,143 @@ engine.addPoint = function(vector, scale) {
 //////////////////
 // shaders.js
 
-engine.shaders = {
-	'selection_plane': {
-		vertexShader: $('#selection_plane_vertex').text(),
-		fragmentShader: $('#selection_plane_fragment').text(),
-		uniforms: {
-			'uThickness': { type: 'f', value: 0.015 },
-			'uColor': { type: "t", value: null }
-		}
-	},
-	'grid_highlight': new THREE.ShaderMaterial({
-		vertexShader: $('#grid_highlight_vertex').text(),
-		fragmentShader: $('#grid_highlight_fragment').text()
-	}),
+engine.shaders = (function() {
 
+	var shaders = {},
+		files = [
+		'gridHighlightF',
+		'gridHighlightV',
+		'overlayColorF',
+		'overlayConstantF',
+		'selectionPlaneF',
+		'selectionPlaneV',
+		'standardV'];
 
-	// New
+	function load(callback) {
+		var file = files.shift();
+		engine.loader.path.text('shaders/' + file);
 
-	vStandard: $('#vStandard').text(),
-	fOverlayConstant: $('#fOverlayConstant').text(),
-	fOverlayColor: $('#fOverlayColor').text()
-};	
+		$.get('shaders/' + file, function(text) {
+			shaders[file] = text;
+
+			if(files.length) {
+				load(callback);
+			} else {
+				callback();
+			}
+		});
+	}
+
+	shaders.load = load;
+	return shaders;
+})();
 
 
 
 //////////////////
-// keyboard.js
+// userinput.js
 
-engine.Keyboard = (function() {
-
-	var _vec = new THREE.Vector2();
-
-	function Keyboard() {
-		this.bindings = {
-			// '^keyDown 32$': function() { console.log(':)'); }
-			// 'p.*65.*83.*68': function() { console.log('ASD in that order.') }
-			// 'p(?=.* 65)(?=.* 83)(?=.* 68)': function() { console.log('ASD in any order'); },
-			// '^d 65$': function() { console.log('Exactly A'); },
-			// 'd(?!.* 83).*': function() { console.log('Not S'); }
-		};
-
-		this._pressed = {};
-		this._mouseBefore = new THREE.Vector2();
-		this._mouseAfter = new THREE.Vector2();
-		this._mouseE;
-
-		this.initListeners();
-	}	
-
-	Keyboard.prototype.addBindings = function(bindings) {
-		$.extend(this.bindings, bindings);
+// state of keyboard and mouse
+engine.userInput = (function() {
+    
+    var pressed = {};
+    
+    // Array of handlers for each type of event (keydown/up, mousedown/up/move)
+    // Functions are added to these arrays by game objects so that they can 
+    // respond to keypresses and such
+    var kd = [],
+        ku = [],
+        md = [],
+        mu = [],
+        mm = [];
+    
+    
+    function keydown(e) {
+        var code = e.charCode || e.keyCode;
+        pressed[code] = new Date().getTime();
+        
+        for(var i = 0; i < kd.length; i++) { 
+            kd[i](code, e); 
+        }
+    }
+    
+    function keyup(e) {
+        var code = e.charCode || e.keyCode;
+        delete pressed[code];
+        
+        for(var i = 0; i < ku.length; i++) { 
+            ku[i](code, e); 
+        }
+    }
+    
+    function mousedown(e) {
+        var button = (['l', 'm', 'r'])[e.which - 1];
+        pressed[button] = new Date().getTime();
+        
+        for(var i = 0; i < md.length; i++) { 
+            md[i](button, e); 
+        }
+    }
+    
+    function mouseup(e) {
+        var button = (['l', 'm', 'r'])[e.which - 1];
+        delete pressed[button];
+        
+        for(var i = 0; i < mu.length; i++) { 
+            mu[i](button, e); 
+        }
+    }
+    
+    var lastcalled = 0,
+        clientX, 
+        clientY;
+    function mousemove(e) {
+        // Limit to video framerate. Browsers call this at 999fps for some reason
+        var timestamp = new Date().getTime();
+        if((timestamp - lastcalled) >= (1000 / engine.fps)) {
+            lastcalled = timestamp;
+            
+            clientX = e.clientX;
+            clientY = e.clientY;
+            
+            for(var i = 0; i < mm.length; i++) {
+                mm[i](e);   
+            }
+        }
+    }
+    
+    function contextmenu(e) {
+        e.preventDefault();
+    }
+    
+    function focus(e) {
+        // If the user does something weird, no keyup event will be fired and 
+        // a key will seem to be stuck down. This will let them refocus the page
+        // to reset everything.
+        pressed = {};
+    }
+    
+    function listen() {
+		window.addEventListener('keydown', keydown, false);
+		window.addEventListener('keyup', keyup, false);
+		window.addEventListener('mousedown', mousedown, false);
+		window.addEventListener('mouseup', mouseup, false);
+		window.addEventListener('mousemove', mousemove, false);
+		window.addEventListener('contextmenu', contextmenu, false);
+		window.addEventListener('focus', focus, false);
+	}
+	
+	return {
+        pressed: pressed,
+        listen: listen,
+        clientX: clientX,
+        clientY: clientY,
+        kd: kd,
+        ku: ku,
+        md: md,
+        mu: mu,
+        mm: mm
 	};
-
-	/* Scans all the bindings and executes any occurances. */
-	Keyboard.prototype.searchKeys = function(bindings, eventType, data) {
-
-		// Sort keypresses in chronological order
-		var order = [];
-		for(var key in this._pressed) {
-			order.push([key, this._pressed[key]]);	
-		}
-		order.sort(function(a, b) {
-			return a[1] - b[1];
-		});
-
-		// Form a 'trigger' string that characterizes this event
-		var trigger = eventType;
-		for(var i = 0; i < order.length; i++) {
-			trigger += ' ' + order[i][0];
-		}
-		trigger.trim();
-
-		// Test and execute callbacks
-		for(var regex in bindings) {
-			if(new RegExp(regex).test(trigger)) {
-
-				var callback = bindings[regex];
-
-				if(typeof callback === 'object') {
-					searchKeys(callback, eventType, data);
-				} else if(typeof callback === 'function') {
-					callback(data);
-				}
-			}
-		}
-	};
-
-	Keyboard.prototype._keydown = function(e) {
-		var code = e.charCode || e.keyCode;
-		// e.preventDefault();
-
-		// Stop that repeating thing that happens when you hold a key down
-		if(this._pressed[code]) {
-			return;
-		}
-
-		console.log(code);
-
-		this._pressed[code] = new Date().getTime();
-		this.searchKeys(this.bindings, 'kd', { e: e });
-	};
-
-	Keyboard.prototype._keyup = function(e) {
-		var code = e.charCode || e.keyCode;
-
-		this.searchKeys(this.bindings, 'ku', { e: e });
-		delete this._pressed[code];
-	};
-
-	Keyboard.prototype._mousedown = function(e) {
-		var button = ([
-			'left',
-			'middle',
-			'right'
-		])[e.which - 1];
-
-		this._pressed[button] = new Date().getTime();
-		this.searchKeys(this.bindings, 'md', { e: e });
-	};
-
-	Keyboard.prototype._mouseup = function(e) {
-		var button = ([
-			'left',
-			'middle',
-			'right'
-		])[e.which - 1];
-
-		this.searchKeys(this.bindings, 'mu', { e: e });
-		delete this._pressed[button];
-	};
-
-	Keyboard.prototype._mousemove = function(e) {
-		this._mouseE = e;
-		this._mouseAfter.set(e.clientX, e.clientY);
-	};
-
-	Keyboard.prototype._contextmenu = function(e) {
-		e.preventDefault();
-	};
-
-	Keyboard.prototype._focus = function(e) {
-		// Incase the user does something bad and a key gets stuck down
-		this._pressed = {};
-	};
-
-	Keyboard.prototype.update = function() {
-		this.searchKeys(this.bindings, 'u');
-
-		// If the mouse has moved
-		_vec.subVectors(this._mouseAfter, this._mouseBefore);
-		if(_vec.x || _vec.y) {
-			
-			this.searchKeys(this.bindings, 'mm', {
-				difference: _vec.clone(),
-				e: this._mouseE
-			});
-
-			this._mouseBefore.copy(this._mouseAfter);
-		}
-	};
-
-
-	Keyboard.prototype.initListeners = function() {
-		window.addEventListener('keydown', engine.context(this._keydown, this), false);
-		window.addEventListener('keyup', engine.context(this._keyup, this), false);
-		window.addEventListener('mousedown', engine.context(this._mousedown, this), false);
-		window.addEventListener('mouseup', engine.context(this._mouseup, this), false);
-		window.addEventListener('mousemove', engine.context(this._mousemove, this), false);
-		window.addEventListener('contextmenu', this._contextmenu, false);
-		window.addEventListener('focus', engine.context(this._focus, this), false);
-	};
-
-	return Keyboard;
 })();
 
 
@@ -292,49 +260,53 @@ engine.Keyboard = (function() {
 //////////////////
 // display.js
 
-engine.Display = (function() {
+engine.fps = 60;
+engine.display = (function() {
 
-	function Display() {
-		this.renderer = new THREE.WebGLRenderer({
+	var renderer = new THREE.WebGLRenderer({
 			clearColor: 0xF5F5DC,
 			clearAlpha: 1,
 			antialias: true
-		});
-		this.canvas = this.renderer.domElement;
-		this.ctx = this.renderer.context;
+	});
+    
+    var canvas = renderer.domElement,
+        ctx = renderer.context;
 
-		$(document.body).append(this.canvas);
-		this.fullscreen();
+	$(document.body).append(canvas);
 
-		/////////////////////////////////////
+    /////////////////////////////////////
 
-		this.stats = new Stats();
+	var stats = new Stats();
 
-		this.stats.domElement.style.position = 'absolute';
-		this.stats.domElement.style.left = '0px';
-		this.stats.domElement.style.top = '0px';
+	stats.domElement.style.position = 'absolute';
+	stats.domElement.style.left = '0px';
+	stats.domElement.style.top = '0px';
 
-		$(document.body).append(this.stats.domElement);
+	$(document.body).append(stats.domElement);
 
-		//////////////////////////////////////
+	//////////////////////////////////////
 
-		this.initListeners();
+
+	function render(scene, camera) {
+		stats.update();
+		renderer.render(scene, camera);
+	}
+
+	function fullscreen() {
+		renderer.setSize(window.innerWidth, window.innerHeight - 5);
+	}
+	fullscreen();
+
+	function listen() {
+		window.addEventListener('resize', fullscreen, false);
+	}
+	
+	return {
+        render: render,
+        canvas: canvas,
+        listen: listen,
+        ctx: ctx
 	};
-
-	Display.prototype.render = function(scene, camera) {
-		this.stats.update();
-		this.renderer.render(scene, camera);
-	};
-
-	Display.prototype.fullscreen = function() {
-		this.renderer.setSize(window.innerWidth, window.innerHeight - 5);
-	};
-
-	Display.prototype.initListeners = function() {
-		window.addEventListener('resize', engine.context(this.fullscreen, this), false);
-	};
-
-	return Display;
 })();
 
 
@@ -342,146 +314,132 @@ engine.Display = (function() {
 //////////////////
 // camera.js
 
-engine.Camera = (function() {
+engine.camera = (function() {
 	
-	var _vec = new THREE.Vector3();
+	var cam = new THREE.PerspectiveCamera(
+        75, 
+		window.innerWidth / window.innerHeight, 
+		0.01, 
+		1000),
+		
+		zoom = new THREE.Object3D(),
+		yaw = new THREE.Object3D(),
+		pitch = new THREE.Object3D(),
+		pivot = new THREE.Object3D();
+	
+	
+	// As default, set cam one unit away, looking downwards.
+	cam.position.set(0, 1, 0);
+	cam.lookAt(new THREE.Vector3());
+	
+	pivot.position.set(0, 0, 0);
+	zoom.scale.set(10, 10, 10);
+	yaw.rotation.y = 0;
+	pitch.rotation.x = 0;
+	
+	// Each object controls one aspect of the transform. They are parented in
+	// the following order: pivot -> zoom -> yaw -> pitch -> camera
+	pivot.add(zoom);
+	zoom.add(yaw);
+	yaw.add(pitch);
+	pitch.add(cam);
 
-	var _plane = new THREE.Mesh(
-		new THREE.PlaneGeometry(10000, 10000, 1, 1),
-		new THREE.MeshBasicMaterial({ color: 0x00FF00 })
-	);
-	_plane.rotation.x = -Math.PI / 2;
-	_plane.visible = false;
 
-	var _debug = new THREE.Mesh(
-		new THREE.CubeGeometry(1, 1, 1),
-		new THREE.MeshBasicMaterial({ color: 0x00FF00 })
-	);
-	//_debug.scale.multiplyScalar(0.01);
-
-	var _debug2 = new THREE.Mesh(
-		new THREE.CubeGeometry(1, 1, 1),
-		new THREE.MeshNormalMaterial()//new THREE.MeshBasicMaterial({ color: 0x0000FF })
-	);
-
-
-	function Camera() {
-
-		this.camera = new THREE.PerspectiveCamera(
-			75, 
-			window.innerWidth / window.innerHeight, 
-			1e-2, 
-			1e4);
-
-		this.camera.position.set(0, 1, 0);
-		this.camera.lookAt(new THREE.Vector3());
-
-		this.yaw = new THREE.Object3D();
-		this.yaw.rotation.y = 0;
-
-		this.pitch = new THREE.Object3D();
-		this.pitch.rotation.x = 0; //-Math.PI / 2;
-
-		this.zoom = new THREE.Object3D();
-		this.zoom.scale.set(10, 10, 10);
-
-		this.pivot = new THREE.Object3D();
-
-		this.pitch.add(this.camera);
-		this.yaw.add(this.pitch);
-		this.zoom.add(this.yaw);
-		this.pivot.add(this.zoom);
-
-		this.limits();
-		this.initListeners();
-
-		var mouseDragOld;
-		this.active = false;
-
-		this.bindings = {
-			'^u 87$': engine.context(function(data) {
-				this.zoom.scale.multiplyScalar(1 / 1.05);
-				this.limits();
-			}, this),
-
-			'^u 83$': engine.context(function(data) {
-				this.zoom.scale.multiplyScalar(1.05);
-				this.limits();
-			}, this),
-
-			'^mm middle$': engine.context(function(data) {
-				var factor = Math.pow(1.01, data.difference.y);
-				this.zoom.scale.multiplyScalar(factor);
-				this.limits();
-			}, this),
-
-			'^mm right$': engine.context(function(data) {
-				this.yaw.rotation.y -= data.difference.x / 200;
-				this.pitch.rotation.z += data.difference.y / 200;
-				this.limits();
-			}, this),
-
-			'^md (middle|right)': engine.context(function(data) {
-				this.active = true;
-			}, this),
-
-			'^mu (middle|right)': engine.context(function(data) {
-				this.active = false;
-			}, this),
-
-			/////////////////////////////
-
-			'^md left$': engine.context(function(data) {
-				var mouse = engine.raycastMouse()[0];
-				if(mouse) {
-					mouseDragOld = mouse.point;
-					this.active = true;
-				}
-			}, this),
-
-			'^mu left$': engine.context(function(data) {
-				mouseDragOld = undefined;
-				this.active = false;
-			}, this),
-
-			'^u left$': engine.context(function(data) {
-				if(!this.active) return;
-
-				var mouseDragNew = engine.raycastMouse()[0];
-				if(!mouseDragNew) return;
-				mouseDragNew = mouseDragNew.point;
-
-				var dist = this.pivot.position.distanceTo(mouseDragNew);
-
-				_vec.subVectors(mouseDragOld, mouseDragNew);
-				_vec.multiplyScalar(0.3);
-				this.pivot.position.add(_vec);
-			}, this)
-		};
+	function limits() {
+        //if(this.zoom.scale.length() > 50) { this.zoom.scale.setLength(50); }
+		if(pitch.rotation.z > -0.1) { pitch.rotation.z = -0.1; }
+		if(pitch.rotation.z < -1.2) { pitch.rotation.z = -1.2; }
+	}
+	
+	function resize() {
+        cam.aspect = window.innerWidth / window.innerHeight;
+		cam.updateProjectionMatrix();
 	}
 
-	Camera.prototype.addHelpers = function(scene) {
-		scene.add(_debug);
-		scene.add(_debug2);
-		scene.add(_plane);
+	function listen() {
+		window.addEventListener('resize', resize, false);
+	}
+	
+	// Camera controls
+	var activeButton = false,
+        mouseDragOld,
+        mouseDragNew,
+        intersect;
+	
+	function mousedown(button, e) {
+        if(button === 'l') {
+            // Project the current mouse position to a (mostly) infinite ground 
+            // plane. This allows us to compute camera movements in world space,
+            // rather than screen space.
+            var intersect = engine.raycastMouse(e.clientX, e.clientY)[0];
+            if(intersect) {
+                activeButton = 'l';
+                mouseDragOld = intersect.point;
+            }
+        } else {
+            activeButton = button;
+        }
+	}
+	
+	function mouseup() {
+        activeButton = false;
+        mouseDragOld = undefined;
+	}
+	
+	var clientXOld, clientYOld;
+	function mousemove(button, e) {
+        if((activeButton !== 'r') && (activeButton !== 'm')) { return; }
+        
+        // Calculate how much the mouse have moved in screen space since the 
+        // last frame
+        var diffX = e.clientX - clientXOld,
+            diffY = e.clientY - clientYOld;
+        clientXOld = e.clientX;
+        clientYOld = e.clientY;
+        
+        if(activeButton === 'r') {
+            
+            yaw.rotation.y -= diffX / 200;
+            pitch.rotation.z += diffY / 200;
+            limits();
+     
+        } else if(activeButton === 'm') {
+            
+            var factor = Math.pow(1.01, diffY);
+			zoom.scale.multiplyScalar(factor);
+			limits();
+            
+        }
+	}
+	
+	function update() {
+        if(activeButton !== 'l') { return; }
+        
+        // Find how much the mouse has moved in world space since the last frame
+        intersect = engine.raycastMouse(
+            engine.userInput.clientX, 
+            engine.userInput.clientY)[0];
+        if(!intersect) return;
+        mouseDragNew = intersect.point;
+        
+		var diff = new THREE.Vector3();
+		diff.subVectors(mouseDragOld, mouseDragNew);
+		
+		// Move the camera 30% percent the displacement
+        // This creates a neat smoothing effect. Otherwise it seems jittery
+		diff.multiplyScalar(0.3);
+		pivot.position.add(diff);
+	}
+	
+	engine.userInput.md.push(mousedown);
+	engine.userInput.mu.push(mouseup);
+	engine.userInput.mm.push(mousemove);
+	
+	return {
+        cam: cam,
+        listen: listen,
+        update: update
 	};
-
-	Camera.prototype.limits = function() {
-		//if(this.zoom.scale.length() > 50) this.zoom.scale.setLength(50);
-		if(this.pitch.rotation.z > -0.1) this.pitch.rotation.z = -0.1;
-		if(this.pitch.rotation.z < -1.2) this.pitch.rotation.z = -1.2;
-	};
-
-	Camera.prototype._resize = function() {
-		this.camera.aspect = window.innerWidth / window.innerHeight;
-		this.camera.updateProjectionMatrix();
-	};
-
-	Camera.prototype.initListeners = function() {
-		window.addEventListener('resize', engine.context(this._resize, this), false);
-	};
-
-	return Camera;
 })();
 
 
@@ -1279,8 +1237,8 @@ engine.overlays = (function() {
 		Overlay.call(this, box);
 
 		this.material = new THREE.ShaderMaterial({
-			vertexShader: s.vStandard,
-			fragmentShader: s.fOverlayConstant,
+			vertexShader: s.standardV,
+			fragmentShader: s.overlayConstantF,
 			uniforms: {
 				uThickness: { type: 'f', value: 0.015 },
 				uColor: { type: 'c', value: color }
@@ -1290,15 +1248,6 @@ engine.overlays = (function() {
 
 	Constant.prototype = Object.create(Overlay.prototype);
 	Constant.prototype.constructor = Constant;
-
-
-	function Alpha(box) {
-		Overlay.call(this, box);
-	}
-
-	Alpha.prototype = Object.create(Overlay.prototype);
-	Alpha.prototype.constructor = Alpha;
-
 
 	function Color(box) {
 		Overlay.call(this, box);
@@ -1316,8 +1265,8 @@ engine.overlays = (function() {
 		this.texture.generateMipmaps = false; // Optimization woohoo!
 
 		this.material = new THREE.ShaderMaterial({
-			vertexShader: s.vStandard,
-			fragmentShader: s.fOverlayColor,
+			vertexShader: s.standardV,
+			fragmentShader: s.overlayColorF,
 			uniforms: {
 				uThickness: { type: 'f', value: 0.015 },
 				uColor: { type: 't', value: this.texture }
@@ -1393,7 +1342,6 @@ engine.overlays = (function() {
 	return {
 		Overlay: Overlay, 
 		Constant: Constant,
-		Alpha: Alpha,
 		Color: Color
 	};
 })();
@@ -1401,258 +1349,63 @@ engine.overlays = (function() {
 
 
 //////////////////
-// terrain.js
+// loader.js
 
-engine.Terrain = (function() {
-
-	function Terrain(grid) {
-		this.grid = grid;
-	}
-
-	Terrain.prototype.generateTerrain = function() {
-
-		// var shader = new THREE.ShaderMaterial({
-		// 	vertexShader: $('#shaderVertex').text(),
-		// 	fragmentShader: $('#shaderFragment').text(),
-		// 	uniforms: {
-		// 		'thickness': { type: 'f', value: 0.015 }
-		// 	}
-		// });
-
-		// var plane = new THREE.Mesh(
-		// 	new THREE.PlaneGeometry(this.grid.x, this.grid.y, 1, 1),
-		// 	shader
-		// );
-		// plane.rotation.x = -Math.PI / 2;
-
-		// console.log(this.grid);
-
-		// plane.geometry.faceVertexUvs[0][0] = [
-		// 	new THREE.Vector2(0, 0),
-		// 	new THREE.Vector2(0, this.grid.y),
-		// 	new THREE.Vector2(this.grid.x, this.grid.y),
-		// 	new THREE.Vector2(this.grid.x, 0)
-		// ];
-
-
-		// return plane;
-	};
-
-	return Terrain;
-
-})();
-
-
-
-//////////////////
-// castle.js
-
-engine.Castle = (function() {
-
-	function Castle(game) {
-		// this.grid = new grid.BooleanGrid({
-		// 	game.terrain.grid.x,
-		// 	game.terrain.grid.y,
-		// 	window.Uint32Array
-		// });
-
-
-	}
-
-	Castle.prototype.generateMesh = function() {
-
-	};
-
-	return Castle;
-
-})();
-
-
-
-//////////////////
-// game.js
-
-engine.Game = (function() {
-
-	function Game(terrain, players) {
-		this.terrain = terrain;
-		this.players = players;
-
-		this.scene = new THREE.Scene();
-		for(var i = 0; i < this.players.length; i++) {
-			this.players[i].init(this);
-			this.scene.add(this.players[i].publicScene);
-		}
-
-		this.scene.add(this.terrain.generateTerrain());
-	}
-
-	Game.prototype.update = function() {
-		for(var i = 0; i < this.players.length; i++) {
-			this.players[i].update();
-		}
-	};
-
-	return Game;
-
-})();
-
-
-
-//////////////////
-// player.js
-
-engine.player = (function() {
-
-	function Player() {
-		this.units = new THREE.Object3D();
-		this.structures = new THREE.Object3D();
-
-		this.publicScene = new THREE.Object3D();
-		this.publicScene.add(this.units);
-		this.publicScene.add(this.structures);
-	}
-
-	Player.prototype.init = function(game) {
-		// this.structureGrid = new engine.grid.NumberGrid({
-		// 	x: game.terrain.grid.x,
-		// 	y: game.terrain.grid.y,
-		// 	datatype: window.Uint8Array
-		// });
-	};
-
-	Player.prototype.update = function() {};
-
-	/////////////////////////////////
-
-	function Human() {
-		Player.call(this);
-
-		this.bindings = {};
-
-		this.camera = new engine.Camera();
-		$.extend(this.bindings, this.camera.bindings);
-
-		this.privateScene = new THREE.Object3D();
-		this.privateScene.add(this.camera.pivot);
-
-		// this.bindings['^keyDown 32$'] = context(function() {
-			
-		// }, this);
-	}
-
-	Human.prototype = Object.create(Player.prototype);
-	Human.prototype.constructor = Human;
-
-	Human.prototype.init = function(game) {
-		Player.prototype.init.call(this, game);
-
-		this.visualGrid = new engine.overlays.Color(new THREE.Box2(new THREE.Vector2(), new THREE.Vector2(128, 128)));
-		$.extend(this.bindings, this.visualGrid.bindings);
-		this.privateScene.add(this.visualGrid);
-	};
-
-	Human.prototype.update = function() {
-		//this.visualGrid.update();
-	};
-
-	/////////////////////////////////
-
-	function AI() {
-		Player.call(this);
-
-	}
-
-	AI.prototype = Object.create(Player.prototype);
-	AI.prototype.constructor = AI;
-
-	/////////////////////////////////
-
-	function Websocket() {
-		Player.call(this);
-
-	}
-
-	Websocket.prototype = Object.create(Player.prototype);
-	Websocket.prototype.constructor = Websocket;
-
-	return {
-		Player: Player,
-		Human: Human,
-		AI: AI,
-		Websocket: Websocket
-	};
-})();
+engine.loader = {
+	path: $('#path'),
+	hide: $('#loader').hide,
+	show: $('#loader').show,
+	fadeIn: $('#loader').fadeIn,
+	fadeOut: $('#loader').fadeOut
+};
 
 
 
 //////////////////
 // main.js
 
-engine.activeGame = null;
-engine.activePlayer = null;
-engine.core = {};
-
 (function main(engine) {
 	window.engine = engine; // Testing
+	
+	engine.userInput.listen();
+	engine.display.listen();
+	engine.camera.listen();
 
-	var keyboard = new engine.Keyboard();
-	var display = new engine.Display();
+	engine.shaders.load(function() {
+		engine.loader.fadeOut();
+	});
+
 
 	var sampleMap = new engine.grid.BooleanGrid({
 		x: 128,
 		y: 128
 	});
-	var terrain = new engine.Terrain(sampleMap);
+	
+	var scene = new THREE.Scene();
 
-	var player = new engine.player.Human();
-
-	var game = new engine.Game(terrain, [player]);
-	game.scene.add(player.privateScene);
-	keyboard.addBindings(player.bindings);
-
-	engine.core.keyboard = keyboard;
-	engine.core.display = display;
-	engine.activeGame = game;
-	engine.activePlayer = player;
-
-
-	window.player = player;
-	window.keyboard = keyboard;
-	window.game = game;
-
+    var grid = new engine.overlays.Color(new THREE.Box2(new THREE.Vector2(), new THREE.Vector2(128, 128)));
 
 	function newColors() {
-		var v = player.visualGrid.colorData.view;
+		var v = grid.colorData.view;
 
 		var square = Math.floor(Math.random() * 128 * 128 * 3);
 		v[square] = Math.random() * 255;
 		v[square + 1] = Math.random() * 255;
 		v[square + 2] = Math.random() * 255;
 
-		player.visualGrid.texture.needsUpdate = true;
+		grid.texture.needsUpdate = true;
 	}
 
-	//var cube = engine.addPoint(new THREE.Vector3(), 0.1);
-	//window.x = new THREE.DataTexture
-
-	var start = new Date().getTime(),
-		testTime = 2000;
-
 	(function frame() {
-		keyboard.update();
-		game.scene.updateMatrixWorld();
-		game.update();
-
+		engine.camera.update();
 		newColors();
+		engine.display.render(scene, engine.camera.cam);
 
-		display.render(game.scene, player.camera.camera);
-	
-
-		// if(new Date().getTime() - start < testTime) {
-		// 	frame();
-		// }
-		window.requestAnimationFrame(frame);
+		if(engine.fps === 60) {
+            window.requestAnimationFrame(frame);
+		} else {
+            window.setTimeout(frame, 1000 / engine.fps);
+		}
 	})();
 })(engine);
 

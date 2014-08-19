@@ -12,8 +12,6 @@ A python script merges all of the files from the `src/` folder into a single fil
 - Look into procedural content for terrain
 - Spruce up UI
 
-test change
-
 ---------------------------------------------
 
 #Module Index

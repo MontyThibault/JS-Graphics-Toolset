@@ -10,16 +10,13 @@ files = [
     'intro.js',
     'utils.js',
     'shaders.js',
-    'keyboard.js',
+    'userinput.js',
     'display.js',
     'camera.js',
     'grid.js',
     'pathfinding.js',
     'overlays.js',
-    'terrain.js',
-    'castle.js',
-    'game.js',
-    'player.js',
+    'loader.js',
     'main.js',
     'outro.js'
 ]
@@ -34,4 +31,4 @@ JSBuilder.compile(
 )
 
 import time
-print("Build successful. :) {}".format(time.time()))
+print("Build successful. :) " + str(time.time()))
