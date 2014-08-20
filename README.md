@@ -4,58 +4,9 @@ A python script merges all of the files from the `src/` folder into a single fil
 
 [Link to Page](http://montythibault.github.com/JSGame/)
 
----------------------------------------------
-#Todo
 
-- Continue to work on this project
-- Clean up codebase and refactor some of the systems
-- Look into procedural content for terrain
-- Spruce up UI
+## Code Organization
 
----------------------------------------------
+The javascript engine for this project is outlined as follows:
 
-#Module Index
-### Main.js
-MAIN! Where all the action happens
-
-### Camera.js
-Controls camera movement
-
-### Castle.js
-Todo - will be used in the future for creating bases
-
-### Display.js
-Initializes the renderer and makes sure everything is fullscreen
-
-### Game.js
-A hub for connecting players, terrain, and gamestate
-
-### Grid.js
-Holds types for dealing with grids, octrees, et cetera
-
-### Intro.js
-Opening of the function wrapper
-
-### Outro.js 
-Ending of the function wrapper
-
-### Keyboard.js
-Handles keyboard and mouse interaction
-
-### Pathfinding.js
-Implementations of pathfinding algorithms (none of which work right now!)
-
-### Players.js
-All of the different player types (human, AI, websocket...)
-
-### Shaders.js
-Custom shaders
-
-### Terrain.js 
-A bit lame right now, but this will be used for generating game terrain in the future
-
-### Utils.js
-Small THREE.js snippets to make my life easier
-
-### Overlays.js
-Grid overlays for data visualization
+A local `engine` object can be accessed within all code inside of the main wrapper. Inside of this lies all of the utilities and functions necessary for the program to work properly. `main` is called once everything has been defined; within it, the environment is initialized and the `frame` loop carries the program on, running at 60fps.` 

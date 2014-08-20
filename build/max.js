@@ -1,5 +1,5 @@
 /* Created by Monty Thibault
-   Last updated Apr 04, 2014
+   Last updated Aug 19, 2014
    montythibault@gmail.com */
 
 
@@ -360,7 +360,7 @@ engine.camera = (function() {
 		window.addEventListener('resize', resize, false);
 	}
 	
-	// Camera controls
+	// Controls
 	var activeButton = false,
         mouseDragOld,
         mouseDragNew,
@@ -1199,7 +1199,7 @@ engine.pathfinding = (function() {
 // overlays.js
 
 engine.overlays = (function() {
-	
+
 	var _height = 0;
 	var _translate = new THREE.Matrix4();
 
