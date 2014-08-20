@@ -16,7 +16,6 @@ files = [
     'grid.js',
     'pathfinding.js',
     'overlays.js',
-    'loader.js',
     'main.js',
     'outro.js'
 ]

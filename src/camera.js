@@ -1,33 +1,41 @@
 engine.camera = (function() {
-	
-	var cam = new THREE.PerspectiveCamera(
-        75, 
-		window.innerWidth / window.innerHeight, 
-		0.01, 
-		1000),
-		
-		zoom = new THREE.Object3D(),
-		yaw = new THREE.Object3D(),
-		pitch = new THREE.Object3D(),
-		pivot = new THREE.Object3D();
-	
-	
-	// As default, set cam one unit away, looking downwards.
-	cam.position.set(0, 1, 0);
-	cam.lookAt(new THREE.Vector3());
-	
-	pivot.position.set(0, 0, 0);
-	zoom.scale.set(10, 10, 10);
-	yaw.rotation.y = 0;
-	pitch.rotation.x = 0;
-	
-	// Each object controls one aspect of the transform. They are parented in
-	// the following order: pivot -> zoom -> yaw -> pitch -> camera
-	pivot.add(zoom);
-	zoom.add(yaw);
-	yaw.add(pitch);
-	pitch.add(cam);
 
+	var zoom, yaw, pitch, pivot,
+		exports = {
+			init: init,
+			listen: listen,
+			update: update,
+			cam: null
+		};
+
+	function init() {
+		exports.cam = new THREE.PerspectiveCamera(
+	        75, 
+			window.innerWidth / window.innerHeight, 
+			0.01, 
+			1000);
+
+		zoom = new THREE.Object3D();
+		yaw = new THREE.Object3D();
+		pitch = new THREE.Object3D();
+		pivot = new THREE.Object3D();
+
+		// As default, set cam one unit away, looking downwards.
+		exports.cam.position.set(0, 1, 0);
+		exports.cam.lookAt(new THREE.Vector3());
+		
+		pivot.position.set(0, 0, 0);
+		zoom.scale.set(10, 10, 10);
+		yaw.rotation.y = 0;
+		pitch.rotation.x = 0;
+		
+		// Each object controls one aspect of the transform. They are parented in
+		// the following order: pivot -> zoom -> yaw -> pitch -> camera
+		pivot.add(zoom);
+		zoom.add(yaw);
+		yaw.add(pitch);
+		pitch.add(exports.cam);
+	}
 
 	function limits() {
         //if(this.zoom.scale.length() > 50) { this.zoom.scale.setLength(50); }
@@ -36,8 +44,8 @@ engine.camera = (function() {
 	}
 	
 	function resize() {
-        cam.aspect = window.innerWidth / window.innerHeight;
-		cam.updateProjectionMatrix();
+        exports.cam.aspect = window.innerWidth / window.innerHeight;
+		exports.cam.updateProjectionMatrix();
 	}
 
 	function listen() {
@@ -118,10 +126,6 @@ engine.camera = (function() {
 	engine.userInput.md.push(mousedown);
 	engine.userInput.mu.push(mouseup);
 	engine.userInput.mm.push(mousemove);
-	
-	return {
-        cam: cam,
-        listen: listen,
-        update: update
-	};
+
+	return exports;
 })();

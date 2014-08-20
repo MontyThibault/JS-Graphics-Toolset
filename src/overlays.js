@@ -20,7 +20,7 @@ engine.overlays = (function() {
 		_translate.makeTranslation(box.min.x, box.min.y, _height += 0.001);
 		plane.applyMatrix(_translate);	
 
-		plane.computeCentroids();
+		// plane.computeCentroids();
 		plane.computeBoundingBox();
 
 		// Shaders are specific to the subtypes
@@ -76,53 +76,6 @@ engine.overlays = (function() {
 		this.clearColor = new THREE.Color(0x111111);
 
 		this.clear(this.clearColor);
-
-		//////////////////////////////////
-
-		// this.startSquare = new THREE.Vector2();
-		// this.endSquare = new THREE.Vector2();
-
-		// this.bindings = {
-		// 	'^mm$': engine.context(function() {
-		// 		// this.clear();
-
-		// 		// // Update mouse highlight square
-		// 		// var mouse = engine.raycastMouse()[0];
-		// 		// if(engine.activePlayer.camera.active) return;
-		// 		// if(mouse) {
-		// 		// 	this.highlightSingle(
-		// 		// 		new THREE.Vector2(mouse.point.x, -mouse.point.z)
-		// 		// 	);
-		// 		// }
-		// 	}, this),
-
-		// 	'^kd 32$': engine.context(function(e) {
-		// 		var t = engine.raycastMouse()[0].point;
-		// 		this.startSquare.set(t.x, -t.z);
-		// 		this.startSquare = this.snap(this.startSquare);
-
-		// 		this.endSquare.copy(this.startSquare);
-
-		// 		//console.log(this.startSquare, this.endSquare);
-		// 		//var route = engine.pathfinding.dijkstra(grid, this.startSquare, this.endSquare);
-		// 		var route = engine.pathfinding.direct(grid, this.startSquare, this.endSquare);
-		// 		this.highlightGroup(route);
-		// 	}, this),
-
-		// 	'^mm 32$': engine.context(function(e) {
-		// 		var t = engine.raycastMouse()[0].point;
-		// 		this.endSquare.set(t.x, -t.z);
-		// 		this.endSquare = this.snap(this.endSquare);
-		// 		this.clear();
-		// 		//console.log(this.startSquare, this.endSquare);
-		// 		//var route = engine.pathfinding.dijkstra(grid, this.startSquare, this.endSquare);
-		// 		var route = engine.pathfinding.direct(grid, this.startSquare, this.endSquare);
-		// 		//if(!route) return;
-				
-		// 		//this.clear();
-		// 		this.highlightGroup(route);
-		// 	}, this)
-		// };
 	}
 
 	Color.prototype = Object.create(Overlay.prototype);

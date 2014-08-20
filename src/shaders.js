@@ -8,11 +8,12 @@ engine.shaders = (function() {
 		'overlayConstantF',
 		'selectionPlaneF',
 		'selectionPlaneV',
-		'standardV'];
+		'standardV'],
+		$path = $('#path');
 
 	function load(callback) {
 		var file = files.shift();
-		engine.loader.path.text('shaders/' + file);
+		$path.text('shaders/' + file);
 
 		$.get('shaders/' + file, function(text) {
 			shaders[file] = text;

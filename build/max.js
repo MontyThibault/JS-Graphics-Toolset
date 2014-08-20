@@ -1,5 +1,5 @@
 /* Created by Monty Thibault
-   Last updated Aug 19, 2014
+   Last updated Aug 20, 2014
    montythibault@gmail.com */
 
 
@@ -126,11 +126,12 @@ engine.shaders = (function() {
 		'overlayConstantF',
 		'selectionPlaneF',
 		'selectionPlaneV',
-		'standardV'];
+		'standardV'],
+		$path = $('#path');
 
 	function load(callback) {
 		var file = files.shift();
-		engine.loader.path.text('shaders/' + file);
+		$path.text('shaders/' + file);
 
 		$.get('shaders/' + file, function(text) {
 			shaders[file] = text;
@@ -263,29 +264,38 @@ engine.userInput = (function() {
 engine.fps = 60;
 engine.display = (function() {
 
-	var renderer = new THREE.WebGLRenderer({
-			clearColor: 0xF5F5DC,
-			clearAlpha: 1,
-			antialias: true
-	});
-    
-    var canvas = renderer.domElement,
-        ctx = renderer.context;
+	var canvas, ctx, renderer, stats,
+		exports = {
+			init: init,
+			render: render,
+			listen: listen,
+			canvas: null,
+			ctx: null
+		};
 
-	$(document.body).append(canvas);
+	function init() {
+		renderer = new THREE.WebGLRenderer({
+				clearColor: 0xF5F5DC,
+				clearAlpha: 1,
+				antialias: true
+		});
+	    
+	    exports.canvas = renderer.domElement;
+	    exports.ctx = renderer.context;
 
-    /////////////////////////////////////
+		$(document.body).append(canvas);
 
-	var stats = new Stats();
+	    /////////////////////////////////////
 
-	stats.domElement.style.position = 'absolute';
-	stats.domElement.style.left = '0px';
-	stats.domElement.style.top = '0px';
+		stats = new Stats();
 
-	$(document.body).append(stats.domElement);
+		stats.domElement.style.position = 'absolute';
+		stats.domElement.style.left = '0px';
+		stats.domElement.style.top = '0px';
 
-	//////////////////////////////////////
+		$(document.body).append(stats.domElement);
 
+	}
 
 	function render(scene, camera) {
 		stats.update();
@@ -295,18 +305,13 @@ engine.display = (function() {
 	function fullscreen() {
 		renderer.setSize(window.innerWidth, window.innerHeight - 5);
 	}
-	fullscreen();
 
 	function listen() {
 		window.addEventListener('resize', fullscreen, false);
+		fullscreen();
 	}
 	
-	return {
-        render: render,
-        canvas: canvas,
-        listen: listen,
-        ctx: ctx
-	};
+	return exports;
 })();
 
 
@@ -315,35 +320,43 @@ engine.display = (function() {
 // camera.js
 
 engine.camera = (function() {
-	
-	var cam = new THREE.PerspectiveCamera(
-        75, 
-		window.innerWidth / window.innerHeight, 
-		0.01, 
-		1000),
-		
-		zoom = new THREE.Object3D(),
-		yaw = new THREE.Object3D(),
-		pitch = new THREE.Object3D(),
-		pivot = new THREE.Object3D();
-	
-	
-	// As default, set cam one unit away, looking downwards.
-	cam.position.set(0, 1, 0);
-	cam.lookAt(new THREE.Vector3());
-	
-	pivot.position.set(0, 0, 0);
-	zoom.scale.set(10, 10, 10);
-	yaw.rotation.y = 0;
-	pitch.rotation.x = 0;
-	
-	// Each object controls one aspect of the transform. They are parented in
-	// the following order: pivot -> zoom -> yaw -> pitch -> camera
-	pivot.add(zoom);
-	zoom.add(yaw);
-	yaw.add(pitch);
-	pitch.add(cam);
 
+	var zoom, yaw, pitch, pivot,
+		exports = {
+			init: init,
+			listen: listen,
+			update: update,
+			cam: null
+		};
+
+	function init() {
+		exports.cam = new THREE.PerspectiveCamera(
+	        75, 
+			window.innerWidth / window.innerHeight, 
+			0.01, 
+			1000);
+
+		zoom = new THREE.Object3D();
+		yaw = new THREE.Object3D();
+		pitch = new THREE.Object3D();
+		pivot = new THREE.Object3D();
+
+		// As default, set cam one unit away, looking downwards.
+		exports.cam.position.set(0, 1, 0);
+		exports.cam.lookAt(new THREE.Vector3());
+		
+		pivot.position.set(0, 0, 0);
+		zoom.scale.set(10, 10, 10);
+		yaw.rotation.y = 0;
+		pitch.rotation.x = 0;
+		
+		// Each object controls one aspect of the transform. They are parented in
+		// the following order: pivot -> zoom -> yaw -> pitch -> camera
+		pivot.add(zoom);
+		zoom.add(yaw);
+		yaw.add(pitch);
+		pitch.add(exports.cam);
+	}
 
 	function limits() {
         //if(this.zoom.scale.length() > 50) { this.zoom.scale.setLength(50); }
@@ -352,8 +365,8 @@ engine.camera = (function() {
 	}
 	
 	function resize() {
-        cam.aspect = window.innerWidth / window.innerHeight;
-		cam.updateProjectionMatrix();
+        exports.cam.aspect = window.innerWidth / window.innerHeight;
+		exports.cam.updateProjectionMatrix();
 	}
 
 	function listen() {
@@ -434,12 +447,8 @@ engine.camera = (function() {
 	engine.userInput.md.push(mousedown);
 	engine.userInput.mu.push(mouseup);
 	engine.userInput.mm.push(mousemove);
-	
-	return {
-        cam: cam,
-        listen: listen,
-        update: update
-	};
+
+	return exports;
 })();
 
 
@@ -1220,7 +1229,7 @@ engine.overlays = (function() {
 		_translate.makeTranslation(box.min.x, box.min.y, _height += 0.001);
 		plane.applyMatrix(_translate);	
 
-		plane.computeCentroids();
+		// plane.computeCentroids();
 		plane.computeBoundingBox();
 
 		// Shaders are specific to the subtypes
@@ -1276,53 +1285,6 @@ engine.overlays = (function() {
 		this.clearColor = new THREE.Color(0x111111);
 
 		this.clear(this.clearColor);
-
-		//////////////////////////////////
-
-		// this.startSquare = new THREE.Vector2();
-		// this.endSquare = new THREE.Vector2();
-
-		// this.bindings = {
-		// 	'^mm$': engine.context(function() {
-		// 		// this.clear();
-
-		// 		// // Update mouse highlight square
-		// 		// var mouse = engine.raycastMouse()[0];
-		// 		// if(engine.activePlayer.camera.active) return;
-		// 		// if(mouse) {
-		// 		// 	this.highlightSingle(
-		// 		// 		new THREE.Vector2(mouse.point.x, -mouse.point.z)
-		// 		// 	);
-		// 		// }
-		// 	}, this),
-
-		// 	'^kd 32$': engine.context(function(e) {
-		// 		var t = engine.raycastMouse()[0].point;
-		// 		this.startSquare.set(t.x, -t.z);
-		// 		this.startSquare = this.snap(this.startSquare);
-
-		// 		this.endSquare.copy(this.startSquare);
-
-		// 		//console.log(this.startSquare, this.endSquare);
-		// 		//var route = engine.pathfinding.dijkstra(grid, this.startSquare, this.endSquare);
-		// 		var route = engine.pathfinding.direct(grid, this.startSquare, this.endSquare);
-		// 		this.highlightGroup(route);
-		// 	}, this),
-
-		// 	'^mm 32$': engine.context(function(e) {
-		// 		var t = engine.raycastMouse()[0].point;
-		// 		this.endSquare.set(t.x, -t.z);
-		// 		this.endSquare = this.snap(this.endSquare);
-		// 		this.clear();
-		// 		//console.log(this.startSquare, this.endSquare);
-		// 		//var route = engine.pathfinding.dijkstra(grid, this.startSquare, this.endSquare);
-		// 		var route = engine.pathfinding.direct(grid, this.startSquare, this.endSquare);
-		// 		//if(!route) return;
-				
-		// 		//this.clear();
-		// 		this.highlightGroup(route);
-		// 	}, this)
-		// };
 	}
 
 	Color.prototype = Object.create(Overlay.prototype);
@@ -1349,66 +1311,37 @@ engine.overlays = (function() {
 
 
 //////////////////
-// loader.js
-
-engine.loader = {
-	path: $('#path'),
-	hide: $('#loader').hide,
-	show: $('#loader').show,
-	fadeIn: $('#loader').fadeIn,
-	fadeOut: $('#loader').fadeOut
-};
-
-
-
-//////////////////
 // main.js
 
 (function main(engine) {
-	window.engine = engine; // Testing
-	
+
+	window.engine = engine;
+
+	engine.display.init();
+	engine.camera.init();
+
 	engine.userInput.listen();
 	engine.display.listen();
 	engine.camera.listen();
 
 	engine.shaders.load(function() {
-		engine.loader.fadeOut();
+		$('#loader').fadeOut();
 	});
 
-	console.log('Hello, world!');
+	var scene = new THREE.Scene();
+
+	(function frame() {
+		engine.camera.update();
+		engine.display.render(scene, engine.camera.cam);
 
 
-	// var sampleMap = new engine.grid.BooleanGrid({
-	// 	x: 128,
-	// 	y: 128
-	// });
-	
-	// var scene = new THREE.Scene();
 
- //    var grid = new engine.overlays.Color(new THREE.Box2(new THREE.Vector2(), new THREE.Vector2(128, 128)));
-
-	// function newColors() {
-	// 	var v = grid.colorData.view;
-
-	// 	var square = Math.floor(Math.random() * 128 * 128 * 3);
-	// 	v[square] = Math.random() * 255;
-	// 	v[square + 1] = Math.random() * 255;
-	// 	v[square + 2] = Math.random() * 255;
-
-	// 	grid.texture.needsUpdate = true;
-	// }
-
-	// (function frame() {
-	// 	engine.camera.update();
-	// 	newColors();
-	// 	engine.display.render(scene, engine.camera.cam);
-
-	// 	if(engine.fps === 60) {
- //            window.requestAnimationFrame(frame);
-	// 	} else {
- //            window.setTimeout(frame, 1000 / engine.fps);
-	// 	}
-	// })();
+		if(engine.fps === 60) {
+            window.requestAnimationFrame(frame);
+		} else {
+            window.setTimeout(frame, 1000 / engine.fps);
+		}
+	})();
 })(engine);
 
 
