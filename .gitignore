@@ -1,1 +1,3 @@
 develop.sh
+*.sublime-project
+*.sublime-workspace
