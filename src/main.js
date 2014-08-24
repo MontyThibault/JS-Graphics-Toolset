@@ -7,7 +7,7 @@
 
 	engine.userInput.listen();
 	engine.display.listen();
-	engine.camera.listen();
+	engine.camera.tumbleControls.listen();
 
 	engine.shaders.load(function() {
 		engine.map.load(function(mesh) {
@@ -24,7 +24,7 @@
 
 
 	(function frame() {
-		engine.camera.update();
+		engine.camera.tumbleControls.update();
 		engine.display.render(scene, engine.camera.cam);
 
 		if(engine.fps === 60) {

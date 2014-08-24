@@ -3,8 +3,8 @@ engine.camera = (function() {
 	var zoom, yaw, pitch, pivot,
 		exports = {
 			init: init,
-			listen: listen,
-			update: update,
+			tumbleControls: {},
+			topdownControls: {},
 			obj: null,
 			cam: null
 		};
@@ -55,15 +55,15 @@ engine.camera = (function() {
 		exports.cam.updateProjectionMatrix();
 	}
 
-	function listen() {
+	exports.tumbleControls.listen = function() {
 		window.addEventListener('resize', resize, false);
 
-		engine.userInput.md.push(mousedown);
-		engine.userInput.mu.push(mouseup);
-		engine.userInput.mm.push(mousemove);
+		engine.userInput.md.push(exports.tumbleControls.mousedown);
+		engine.userInput.mu.push(exports.tumbleControls.mouseup);
+		engine.userInput.mm.push(exports.tumbleControls.mousemove);
 	}
 	
-	// Controls
+	// Tumble control private variables
 	var activeButton = false,
         mouseDragOld,
         mouseDragNew,
@@ -71,7 +71,7 @@ engine.camera = (function() {
         clientXOld, 
         clientYOld;
 	
-	function mousedown(button, e) {
+	exports.tumbleControls.mousedown = function(button, e) {
         if(button === 'l') {
             // Project the current mouse position to a (mostly) infinite ground 
             // plane. This allows us to compute camera movements in world space,
@@ -89,12 +89,12 @@ engine.camera = (function() {
         }
 	}
 	
-	function mouseup() {
+	exports.tumbleControls.mouseup = function() {
         activeButton = false;
         mouseDragOld = undefined;
 	}
 	
-	function mousemove(e) {
+	exports.tumbleControls.mousemove = function(e) {
         if((activeButton !== 'r') && (activeButton !== 'm')) { return; }
 
 
@@ -124,7 +124,7 @@ engine.camera = (function() {
         }
 	}
 	
-	function update() {
+	exports.tumbleControls.update = function() {
         if(activeButton !== 'l') { return; }
 
         // Find how much the mouse has moved in world space since the last frame
