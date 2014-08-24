@@ -188,7 +188,8 @@ engine.topdownCamera = (function() {
 	}
 
 	function listen() {
-		window.addEventListener('resize', resize, false);;
+		window.addEventListener('resize', resize, false);
+		engine.userInput.mm.push(mousemove);
 	}
 
 	function resize() {
@@ -221,6 +222,19 @@ engine.topdownCamera = (function() {
 		if(d in engine.userInput.pressed) {
 			pivot.position.x += keySensitivity;
 		}
+	}
+
+	var oldClientX,
+		diffX;
+	function mousemove(e) {
+		diffX = e.clientX - oldClientX;
+		oldClientX = e.clientX;
+		
+		// First time this is called, oldClientX does not exist
+		// and will cause an error
+		if(isNaN(diffX)) return;
+
+		yaw.rotation.y -= diffX / 400;
 	}
 
 	return exports;
