@@ -1,5 +1,5 @@
 /* Created by Monty Thibault
-   Last updated Aug 23, 2014
+   Last updated Aug 24, 2014
    montythibault@gmail.com */
 
 
@@ -81,9 +81,11 @@ engine.raycastMouse = (function() {
 	plane.updateMatrixWorld(); // Or else raycasting doesn't work properly
 
 	return function(clientX, clientY, objects) {
-		var camera = engine.camera.cam;
+		var camera = engine.camera.cam,
+			cameraPosition = 
+				new THREE.Vector3().setFromMatrixPosition(camera.matrixWorld);
 
-		if(!engine.userInput.pressed.l) return false;
+		// if(!engine.userInput.pressed.l) return false;
 
 		var mouse = new THREE.Vector3(
 			clientX, 
@@ -93,7 +95,7 @@ engine.raycastMouse = (function() {
 		mouse = engine.unproject(mouse, camera);
 
 		return engine.intersect(
-			camera.matrixWorld.getPosition(), 
+			cameraPosition, 
 			mouse, 
 			objects || [plane]);
 	};
@@ -101,12 +103,12 @@ engine.raycastMouse = (function() {
 
 engine.addPoint = function(vector, scale) {
 	var cube = new THREE.Mesh(
-		new THREE.CubeGeometry(1, 1, 1),
-		new THREE.MeshBasicMaterial({ color: 0x000000 }));
-	cube.position = vector;
-	cube.scale.multiplyScalar(scale);
+		new THREE.BoxGeometry(1, 1, 1),
+		new THREE.MeshBasicMaterial({ color: 0x00FF00 }));
+	cube.position.copy(vector);
+	cube.scale.multiplyScalar(scale || 1);
 	
-	engine.activeGame.scene.add(cube);
+	window.scene.add(cube);
 
 	return cube;
 };
@@ -155,52 +157,58 @@ engine.shaders = (function() {
 
 // state of keyboard and mouse
 engine.userInput = (function() {
-    
-    var pressed = {};
-    
+        
+
+    var exports = {
+        pressed: {},
+        listen: listen,
+
     // Array of handlers for each type of event (keydown/up, mousedown/up/move)
     // Functions are added to these arrays by game objects so that they can 
     // respond to keypresses and such
-    var kd = [],
-        ku = [],
-        md = [],
-        mu = [],
-        mm = [];
-    
+        kd: [],
+        ku: [],
+        md: [],
+        mu: [],
+        mm: [],
+
+        clientX: null,
+        clientY: null
+    };
     
     function keydown(e) {
         var code = e.charCode || e.keyCode;
-        pressed[code] = new Date().getTime();
+        exports.pressed[code] = new Date().getTime();
         
-        for(var i = 0; i < kd.length; i++) { 
-            kd[i](code, e); 
+        for(var i = 0; i < exports.kd.length; i++) { 
+            exports.kd[i](code, e); 
         }
     }
     
     function keyup(e) {
         var code = e.charCode || e.keyCode;
-        delete pressed[code];
+        delete exports.pressed[code];
         
-        for(var i = 0; i < ku.length; i++) { 
-            ku[i](code, e); 
+        for(var i = 0; i < exports.ku.length; i++) { 
+            exports.ku[i](code, e); 
         }
     }
     
     function mousedown(e) {
         var button = (['l', 'm', 'r'])[e.which - 1];
-        pressed[button] = new Date().getTime();
+        exports.pressed[button] = new Date().getTime();
         
-        for(var i = 0; i < md.length; i++) { 
-            md[i](button, e); 
+        for(var i = 0; i < exports.md.length; i++) { 
+            exports.md[i](button, e); 
         }
     }
     
     function mouseup(e) {
         var button = (['l', 'm', 'r'])[e.which - 1];
-        delete pressed[button];
+        delete exports.pressed[button];
         
-        for(var i = 0; i < mu.length; i++) { 
-            mu[i](button, e); 
+        for(var i = 0; i < exports.mu.length; i++) { 
+            exports.mu[i](button, e); 
         }
     }
     
@@ -213,11 +221,11 @@ engine.userInput = (function() {
         if((timestamp - lastcalled) >= (1000 / engine.fps)) {
             lastcalled = timestamp;
             
-            clientX = e.clientX;
-            clientY = e.clientY;
+            exports.clientX = e.clientX;
+            exports.clientY = e.clientY;
             
-            for(var i = 0; i < mm.length; i++) {
-                mm[i](e);   
+            for(var i = 0; i < exports.mm.length; i++) {
+                exports.mm[i](e);   
             }
         }
     }
@@ -230,7 +238,7 @@ engine.userInput = (function() {
         // If the user does something weird, no keyup event will be fired and 
         // a key will seem to be stuck down. This will let them refocus the page
         // to reset everything.
-        pressed = {};
+        exports.pressed = {};
     }
     
     function listen() {
@@ -243,17 +251,7 @@ engine.userInput = (function() {
 		window.addEventListener('focus', focus, false);
 	}
 	
-	return {
-        pressed: pressed,
-        listen: listen,
-        clientX: clientX,
-        clientY: clientY,
-        kd: kd,
-        ku: ku,
-        md: md,
-        mu: mu,
-        mm: mm
-	};
+	return exports;
 })();
 
 
@@ -276,14 +274,14 @@ engine.display = (function() {
 	function init() {
 		renderer = new THREE.WebGLRenderer({
 				clearColor: 0xF5F5DC,
-				clearAlpha: 1,
+				alpha: true,
 				antialias: true
 		});
 	    
 	    exports.canvas = renderer.domElement;
 	    exports.ctx = renderer.context;
 
-		$(document.body).append(canvas);
+		$(document.body).append(exports.canvas);
 
 	    /////////////////////////////////////
 
@@ -326,20 +324,23 @@ engine.camera = (function() {
 			init: init,
 			listen: listen,
 			update: update,
+			obj: null,
 			cam: null
 		};
 
 	function init() {
 		exports.cam = new THREE.PerspectiveCamera(
-	        75, 
+	        60, 
 			window.innerWidth / window.innerHeight, 
 			0.01, 
-			1000);
+			10000);
 
 		zoom = new THREE.Object3D();
 		yaw = new THREE.Object3D();
 		pitch = new THREE.Object3D();
 		pivot = new THREE.Object3D();
+
+		window.zoom = zoom;
 
 		// As default, set cam one unit away, looking downwards.
 		exports.cam.position.set(0, 1, 0);
@@ -350,12 +351,16 @@ engine.camera = (function() {
 		yaw.rotation.y = 0;
 		pitch.rotation.x = 0;
 		
-		// Each object controls one aspect of the transform. They are parented in
-		// the following order: pivot -> zoom -> yaw -> pitch -> camera
+		// Each object controls one aspect of the transform. They placed in
+		// the following hierarchy: pivot -> zoom -> yaw -> pitch -> camera
 		pivot.add(zoom);
 		zoom.add(yaw);
 		yaw.add(pitch);
 		pitch.add(exports.cam);
+
+		// Since pivot is the topmost object, it will be one that is added to
+		// the scene
+		exports.obj = pivot;
 	}
 
 	function limits() {
@@ -371,13 +376,19 @@ engine.camera = (function() {
 
 	function listen() {
 		window.addEventListener('resize', resize, false);
+
+		engine.userInput.md.push(mousedown);
+		engine.userInput.mu.push(mouseup);
+		engine.userInput.mm.push(mousemove);
 	}
 	
 	// Controls
 	var activeButton = false,
         mouseDragOld,
         mouseDragNew,
-        intersect;
+        intersect,
+        clientXOld, 
+        clientYOld;
 	
 	function mousedown(button, e) {
         if(button === 'l') {
@@ -391,6 +402,9 @@ engine.camera = (function() {
             }
         } else {
             activeButton = button;
+
+            clientXOld = e.clientX;
+            clientYOld = e.clientY;
         }
 	}
 	
@@ -399,16 +413,21 @@ engine.camera = (function() {
         mouseDragOld = undefined;
 	}
 	
-	var clientXOld, clientYOld;
-	function mousemove(button, e) {
+	function mousemove(e) {
         if((activeButton !== 'r') && (activeButton !== 'm')) { return; }
-        
+
+
         // Calculate how much the mouse have moved in screen space since the 
         // last frame
         var diffX = e.clientX - clientXOld,
             diffY = e.clientY - clientYOld;
         clientXOld = e.clientX;
         clientYOld = e.clientY;
+
+        // 
+        if((diffX === NaN) || (diffY === NaN)) {
+        	return;
+        }
         
         if(activeButton === 'r') {
             
@@ -421,32 +440,29 @@ engine.camera = (function() {
             var factor = Math.pow(1.01, diffY);
 			zoom.scale.multiplyScalar(factor);
 			limits();
-            
         }
 	}
 	
 	function update() {
         if(activeButton !== 'l') { return; }
-        
+
         // Find how much the mouse has moved in world space since the last frame
-        intersect = engine.raycastMouse(
+        var intersect = engine.raycastMouse(
             engine.userInput.clientX, 
             engine.userInput.clientY)[0];
+
         if(!intersect) return;
+
         mouseDragNew = intersect.point;
         
 		var diff = new THREE.Vector3();
 		diff.subVectors(mouseDragOld, mouseDragNew);
 		
-		// Move the camera 30% percent the displacement
+		// Move the camera 50% percent the displacement
         // This creates a neat smoothing effect. Otherwise it seems jittery
-		diff.multiplyScalar(0.3);
+		diff.multiplyScalar(0.5);
 		pivot.position.add(diff);
 	}
-	
-	engine.userInput.md.push(mousedown);
-	engine.userInput.mu.push(mouseup);
-	engine.userInput.mm.push(mousemove);
 
 	return exports;
 })();
@@ -1311,6 +1327,52 @@ engine.overlays = (function() {
 
 
 //////////////////
+// map.js
+
+engine.map = (function() {
+    
+    // aspects of a map:
+    //
+    // pathfinding guideways
+    // grid (includes impassable areas & any special features)
+    // terrain & textures
+    // any special information
+    
+    var $path = $('#path'),
+    exports = {
+    	material: null,
+    	mesh: null,
+    	load: load,
+    };
+
+
+    function load(callback) {
+    	var loader = new THREE.JSONLoader();
+        $path.text('assets/samplemap/map.js');
+	    loader.load('assets/samplemap/map.js', function (geometry) {
+
+            $path.text('assets/samplemap/Colormap.png');
+	    	THREE.ImageUtils.loadTexture('assets/samplemap/Colormap.png', 
+	    		THREE.UVMapping, function(texture) {
+
+	    		exports.material = new THREE.MeshBasicMaterial({
+	    			map: texture
+	    		});
+
+	    		exports.mesh = new THREE.Mesh(geometry, exports.material);
+                exports.mesh.scale.set(1, 1, -1);
+
+	    		callback(exports.mesh);
+	    	});
+	    });
+    }
+
+    return exports;
+})();
+
+
+
+//////////////////
 // main.js
 
 (function main(engine) {
@@ -1325,16 +1387,22 @@ engine.overlays = (function() {
 	engine.camera.listen();
 
 	engine.shaders.load(function() {
-		$('#loader').fadeOut();
+		engine.map.load(function(mesh) {
+
+			$('#loader').fadeOut();
+
+			scene.add(mesh);
+		});
 	});
 
 	var scene = new THREE.Scene();
+	scene.add(engine.camera.obj);
+	window.scene = scene;
+
 
 	(function frame() {
 		engine.camera.update();
 		engine.display.render(scene, engine.camera.cam);
-
-
 
 		if(engine.fps === 60) {
             window.requestAnimationFrame(frame);

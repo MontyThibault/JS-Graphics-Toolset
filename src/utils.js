@@ -63,9 +63,11 @@ engine.raycastMouse = (function() {
 	plane.updateMatrixWorld(); // Or else raycasting doesn't work properly
 
 	return function(clientX, clientY, objects) {
-		var camera = engine.camera.cam;
+		var camera = engine.camera.cam,
+			cameraPosition = 
+				new THREE.Vector3().setFromMatrixPosition(camera.matrixWorld);
 
-		if(!engine.userInput.pressed.l) return false;
+		// if(!engine.userInput.pressed.l) return false;
 
 		var mouse = new THREE.Vector3(
 			clientX, 
@@ -75,7 +77,7 @@ engine.raycastMouse = (function() {
 		mouse = engine.unproject(mouse, camera);
 
 		return engine.intersect(
-			camera.matrixWorld.getPosition(), 
+			cameraPosition, 
 			mouse, 
 			objects || [plane]);
 	};
@@ -83,12 +85,12 @@ engine.raycastMouse = (function() {
 
 engine.addPoint = function(vector, scale) {
 	var cube = new THREE.Mesh(
-		new THREE.CubeGeometry(1, 1, 1),
-		new THREE.MeshBasicMaterial({ color: 0x000000 }));
-	cube.position = vector;
-	cube.scale.multiplyScalar(scale);
+		new THREE.BoxGeometry(1, 1, 1),
+		new THREE.MeshBasicMaterial({ color: 0x00FF00 }));
+	cube.position.copy(vector);
+	cube.scale.multiplyScalar(scale || 1);
 	
-	engine.activeGame.scene.add(cube);
+	window.scene.add(cube);
 
 	return cube;
 };

@@ -13,14 +13,14 @@ engine.display = (function() {
 	function init() {
 		renderer = new THREE.WebGLRenderer({
 				clearColor: 0xF5F5DC,
-				clearAlpha: 1,
+				alpha: true,
 				antialias: true
 		});
 	    
 	    exports.canvas = renderer.domElement;
 	    exports.ctx = renderer.context;
 
-		$(document.body).append(canvas);
+		$(document.body).append(exports.canvas);
 
 	    /////////////////////////////////////
 

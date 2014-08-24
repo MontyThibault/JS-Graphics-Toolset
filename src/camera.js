@@ -5,20 +5,23 @@ engine.camera = (function() {
 			init: init,
 			listen: listen,
 			update: update,
+			obj: null,
 			cam: null
 		};
 
 	function init() {
 		exports.cam = new THREE.PerspectiveCamera(
-	        75, 
+	        60, 
 			window.innerWidth / window.innerHeight, 
 			0.01, 
-			1000);
+			10000);
 
 		zoom = new THREE.Object3D();
 		yaw = new THREE.Object3D();
 		pitch = new THREE.Object3D();
 		pivot = new THREE.Object3D();
+
+		window.zoom = zoom;
 
 		// As default, set cam one unit away, looking downwards.
 		exports.cam.position.set(0, 1, 0);
@@ -29,12 +32,16 @@ engine.camera = (function() {
 		yaw.rotation.y = 0;
 		pitch.rotation.x = 0;
 		
-		// Each object controls one aspect of the transform. They are parented in
-		// the following order: pivot -> zoom -> yaw -> pitch -> camera
+		// Each object controls one aspect of the transform. They placed in
+		// the following hierarchy: pivot -> zoom -> yaw -> pitch -> camera
 		pivot.add(zoom);
 		zoom.add(yaw);
 		yaw.add(pitch);
 		pitch.add(exports.cam);
+
+		// Since pivot is the topmost object, it will be one that is added to
+		// the scene
+		exports.obj = pivot;
 	}
 
 	function limits() {
@@ -50,13 +57,19 @@ engine.camera = (function() {
 
 	function listen() {
 		window.addEventListener('resize', resize, false);
+
+		engine.userInput.md.push(mousedown);
+		engine.userInput.mu.push(mouseup);
+		engine.userInput.mm.push(mousemove);
 	}
 	
 	// Controls
 	var activeButton = false,
         mouseDragOld,
         mouseDragNew,
-        intersect;
+        intersect,
+        clientXOld, 
+        clientYOld;
 	
 	function mousedown(button, e) {
         if(button === 'l') {
@@ -70,6 +83,9 @@ engine.camera = (function() {
             }
         } else {
             activeButton = button;
+
+            clientXOld = e.clientX;
+            clientYOld = e.clientY;
         }
 	}
 	
@@ -78,16 +94,21 @@ engine.camera = (function() {
         mouseDragOld = undefined;
 	}
 	
-	var clientXOld, clientYOld;
-	function mousemove(button, e) {
+	function mousemove(e) {
         if((activeButton !== 'r') && (activeButton !== 'm')) { return; }
-        
+
+
         // Calculate how much the mouse have moved in screen space since the 
         // last frame
         var diffX = e.clientX - clientXOld,
             diffY = e.clientY - clientYOld;
         clientXOld = e.clientX;
         clientYOld = e.clientY;
+
+        // 
+        if((diffX === NaN) || (diffY === NaN)) {
+        	return;
+        }
         
         if(activeButton === 'r') {
             
@@ -100,32 +121,29 @@ engine.camera = (function() {
             var factor = Math.pow(1.01, diffY);
 			zoom.scale.multiplyScalar(factor);
 			limits();
-            
         }
 	}
 	
 	function update() {
         if(activeButton !== 'l') { return; }
-        
+
         // Find how much the mouse has moved in world space since the last frame
-        intersect = engine.raycastMouse(
+        var intersect = engine.raycastMouse(
             engine.userInput.clientX, 
             engine.userInput.clientY)[0];
+
         if(!intersect) return;
+
         mouseDragNew = intersect.point;
         
 		var diff = new THREE.Vector3();
 		diff.subVectors(mouseDragOld, mouseDragNew);
 		
-		// Move the camera 30% percent the displacement
+		// Move the camera 50% percent the displacement
         // This creates a neat smoothing effect. Otherwise it seems jittery
-		diff.multiplyScalar(0.3);
+		diff.multiplyScalar(0.5);
 		pivot.position.add(diff);
 	}
-	
-	engine.userInput.md.push(mousedown);
-	engine.userInput.mu.push(mouseup);
-	engine.userInput.mm.push(mousemove);
 
 	return exports;
 })();
