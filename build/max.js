@@ -1355,6 +1355,10 @@ engine.map = (function() {
 	    	THREE.ImageUtils.loadTexture('assets/samplemap/Colormap.png', 
 	    		THREE.UVMapping, function(texture) {
 
+                texture.magFilter = THREE.NearestFilter;
+                texture.minFilter = THREE.NearestFilter;
+                texture.anisotropy = 16;
+
 	    		exports.material = new THREE.MeshBasicMaterial({
 	    			map: texture
 	    		});
