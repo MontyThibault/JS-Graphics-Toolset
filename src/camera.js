@@ -1,10 +1,10 @@
-engine.camera = (function() {
+engine.tumbleCamera = (function() {
 
 	var zoom, yaw, pitch, pivot,
 		exports = {
 			init: init,
-			tumbleControls: {},
-			topdownControls: {},
+			listen: listen,
+			update: update,
 			obj: null,
 			cam: null
 		};
@@ -20,8 +20,6 @@ engine.camera = (function() {
 		yaw = new THREE.Object3D();
 		pitch = new THREE.Object3D();
 		pivot = new THREE.Object3D();
-
-		window.zoom = zoom;
 
 		// As default, set cam one unit away, looking downwards.
 		exports.cam.position.set(0, 1, 0);
@@ -55,15 +53,15 @@ engine.camera = (function() {
 		exports.cam.updateProjectionMatrix();
 	}
 
-	exports.tumbleControls.listen = function() {
+	function listen() {
 		window.addEventListener('resize', resize, false);
 
-		engine.userInput.md.push(exports.tumbleControls.mousedown);
-		engine.userInput.mu.push(exports.tumbleControls.mouseup);
-		engine.userInput.mm.push(exports.tumbleControls.mousemove);
+		engine.userInput.md.push(mousedown);
+		engine.userInput.mu.push(mouseup);
+		engine.userInput.mm.push(mousemove);
 	}
 	
-	// Tumble control private variables
+	// Controls
 	var activeButton = false,
         mouseDragOld,
         mouseDragNew,
@@ -71,7 +69,7 @@ engine.camera = (function() {
         clientXOld, 
         clientYOld;
 	
-	exports.tumbleControls.mousedown = function(button, e) {
+	function mousedown(button, e) {
         if(button === 'l') {
             // Project the current mouse position to a (mostly) infinite ground 
             // plane. This allows us to compute camera movements in world space,
@@ -89,12 +87,12 @@ engine.camera = (function() {
         }
 	}
 	
-	exports.tumbleControls.mouseup = function() {
+	function mouseup() {
         activeButton = false;
         mouseDragOld = undefined;
 	}
 	
-	exports.tumbleControls.mousemove = function(e) {
+	function mousemove(e) {
         if((activeButton !== 'r') && (activeButton !== 'm')) { return; }
 
 
@@ -124,7 +122,7 @@ engine.camera = (function() {
         }
 	}
 	
-	exports.tumbleControls.update = function() {
+	function update() {
         if(activeButton !== 'l') { return; }
 
         // Find how much the mouse has moved in world space since the last frame
@@ -146,4 +144,85 @@ engine.camera = (function() {
 	}
 
 	return exports;
+})();
+
+engine.topdownCamera = (function() {
+	var zoom, yaw, pivot,
+		exports = {
+			init: init,
+			listen: listen,
+			update: update,
+			obj: null,
+			cam: null
+		};
+
+	function init() {
+		exports.cam = new THREE.PerspectiveCamera(
+	        60, 
+			window.innerWidth / window.innerHeight, 
+			0.01, 
+			10000);
+
+		
+		yaw = new THREE.Object3D();
+		pivot = new THREE.Object3D();
+		zoom = new THREE.Object3D();
+
+		// As default, set cam one unit away, looking downwards.
+		exports.cam.position.set(0, 1, 0.3);
+		exports.cam.lookAt(new THREE.Vector3());
+		
+		yaw.rotation.y = 0;
+		pivot.position.set(0, 0, 0);
+		zoom.scale.set(10, 10, 10);
+		
+		// Each object controls one aspect of the transform. They placed in
+		// the following hierarchy: yaw -> pivot -> zoom -> camera;
+		yaw.add(pivot);
+		pivot.add(zoom);
+		zoom.add(exports.cam);
+
+		// Since pivot is the topmost object, it will be one that is added to
+		// the scene
+		exports.obj = yaw;
+	}
+
+	function listen() {
+		window.addEventListener('resize', resize, false);;
+	}
+
+	function resize() {
+        exports.cam.aspect = window.innerWidth / window.innerHeight;
+		exports.cam.updateProjectionMatrix();
+	}
+
+
+	var w = 'W'.charCodeAt(0),
+		s = 'S'.charCodeAt(0),
+		a = 'A'.charCodeAt(0),
+		d = 'D'.charCodeAt(0),
+
+		keySensitivity = 0.15;
+
+
+	function update() {
+		if(w in engine.userInput.pressed) {
+			pivot.position.z -= keySensitivity;
+		}
+
+		if(s in engine.userInput.pressed) {
+			pivot.position.z += keySensitivity;
+		}
+
+		if(a in engine.userInput.pressed) {
+			pivot.position.x -= keySensitivity;
+		}
+
+		if(d in engine.userInput.pressed) {
+			pivot.position.x += keySensitivity;
+		}
+	}
+
+	return exports;
+
 })();

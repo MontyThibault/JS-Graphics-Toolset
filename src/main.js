@@ -3,11 +3,11 @@
 	window.engine = engine;
 
 	engine.display.init();
-	engine.camera.init();
+	engine.topdownCamera.init();
 
 	engine.userInput.listen();
 	engine.display.listen();
-	engine.camera.tumbleControls.listen();
+	engine.topdownCamera.listen();
 
 	engine.shaders.load(function() {
 		engine.map.load(function(mesh) {
@@ -19,13 +19,13 @@
 	});
 
 	var scene = new THREE.Scene();
-	scene.add(engine.camera.obj);
+	scene.add(engine.topdownCamera.obj);
 	window.scene = scene;
 
 
 	(function frame() {
-		engine.camera.tumbleControls.update();
-		engine.display.render(scene, engine.camera.cam);
+		engine.topdownCamera.update();
+		engine.display.render(scene, engine.topdownCamera.cam);
 
 		if(engine.fps === 60) {
             window.requestAnimationFrame(frame);
