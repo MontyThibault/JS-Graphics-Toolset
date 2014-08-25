@@ -26,3 +26,10 @@ canvas {
 #path {
 	color: #999999;
 }
+
+#controls {
+	position: absolute;
+	bottom: 0px;
+	left: 0px;
+	width: 30%;
+}

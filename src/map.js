@@ -17,8 +17,8 @@ engine.map = (function() {
 
     function load(callback) {
     	var loader = new THREE.JSONLoader();
-        $path.text('assets/samplemap/map.js');
-	    loader.load('assets/samplemap/map.js', function (geometry) {
+        $path.text('assets/samplemap/mapflipped.js');
+	    loader.load('assets/samplemap/mapflipped.js', function (geometry) {
 
             $path.text('assets/samplemap/Colormap.png');
 	    	THREE.ImageUtils.loadTexture('assets/samplemap/Colormap.png', 
@@ -28,12 +28,13 @@ engine.map = (function() {
                 texture.minFilter = THREE.NearestFilter;
                 texture.anisotropy = 16;
 
-	    		exports.material = new THREE.MeshBasicMaterial({
+	    		exports.material = new engine.materials.terrain({
 	    			map: texture
 	    		});
 
+                window.mat = exports.material;
+
 	    		exports.mesh = new THREE.Mesh(geometry, exports.material);
-                exports.mesh.scale.set(1, 1, -1);
 
 	    		callback(exports.mesh);
 	    	});

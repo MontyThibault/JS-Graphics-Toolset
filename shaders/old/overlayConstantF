@@ -1,0 +1,29 @@
+uniform vec3 uColor;
+uniform float uThickness;
+varying vec3 vPosition;
+
+vec3 interpolate(vec3 a, vec3 b, float c) {
+    return vec3(
+      mix(a.x, b.x, c),
+      mix(a.y, b.y, c),
+      mix(a.z, b.z, c)
+    );
+}
+
+void main() {
+    float depth = gl_FragCoord.z / gl_FragCoord.w;
+    float falloff = 1.0 / ((depth + 0.7) * 1.0);
+    
+    falloff = min(falloff, 1.0);
+    
+    gl_FragColor = vec4(uColor, falloff);
+    
+    vec3 squarePosition = mod(vPosition, 1.0);
+    
+    if(squarePosition.x < uThickness || squarePosition.x > (1.0 - uThickness) ||
+      squarePosition.y < uThickness || squarePosition.y > (1.0 - uThickness)) {
+      
+      gl_FragColor.xyz = interpolate(gl_FragColor.xyz, vec3(0.0, 0.0, 0.0), 0.5);
+      gl_FragColor.w *= 1.1;
+    }
+}

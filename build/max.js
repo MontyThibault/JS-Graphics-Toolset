@@ -151,13 +151,8 @@ engine.shaders = (function() {
 
 	var shaders = {},
 		files = [
-		'gridHighlightF',
-		'gridHighlightV',
-		'overlayColorF',
-		'overlayConstantF',
-		'selectionPlaneF',
-		'selectionPlaneV',
-		'standardV'],
+		'blackWhite.vert',
+		'blackWhite.frag'],
 		$path = $('#path');
 
 	function load(callback) {
@@ -170,6 +165,7 @@ engine.shaders = (function() {
 			if(files.length) {
 				load(callback);
 			} else {
+				engine.initMaterials();
 				callback();
 			}
 		});
@@ -178,6 +174,37 @@ engine.shaders = (function() {
 	shaders.load = load;
 	return shaders;
 })();
+
+
+
+//////////////////
+// materials.js
+
+// Must be called after shaders have loaded
+engine.materials = {};
+engine.initMaterials = function() {
+
+	engine.materials.terrain = function(config) {
+
+		var uniforms = THREE.UniformsUtils.merge([
+			THREE.UniformsLib.common,
+			THREE.UniformsLib.lights
+		]);
+
+		uniforms.map.value = config.map;
+		uniforms.diffuse.value = new THREE.Color(0xFF0000);
+
+
+		var mat = new THREE.ShaderMaterial({
+			lights: true,
+			vertexShader: engine.shaders['blackWhite.vert'],
+			fragmentShader: engine.shaders['blackWhite.frag'],
+			uniforms: uniforms
+		});
+
+		return mat;
+	}
+};
 
 
 
@@ -1529,8 +1556,8 @@ engine.map = (function() {
 
     function load(callback) {
     	var loader = new THREE.JSONLoader();
-        $path.text('assets/samplemap/map.js');
-	    loader.load('assets/samplemap/map.js', function (geometry) {
+        $path.text('assets/samplemap/mapflipped.js');
+	    loader.load('assets/samplemap/mapflipped.js', function (geometry) {
 
             $path.text('assets/samplemap/Colormap.png');
 	    	THREE.ImageUtils.loadTexture('assets/samplemap/Colormap.png', 
@@ -1540,12 +1567,13 @@ engine.map = (function() {
                 texture.minFilter = THREE.NearestFilter;
                 texture.anisotropy = 16;
 
-	    		exports.material = new THREE.MeshBasicMaterial({
+	    		exports.material = new engine.materials.terrain({
 	    			map: texture
 	    		});
 
+                window.mat = exports.material;
+
 	    		exports.mesh = new THREE.Mesh(geometry, exports.material);
-                exports.mesh.scale.set(1, 1, -1);
 
 	    		callback(exports.mesh);
 	    	});
@@ -1553,6 +1581,31 @@ engine.map = (function() {
     }
 
     return exports;
+})();
+
+
+
+//////////////////
+// player.js
+
+engine.player = (function() {
+
+	var obj = new THREE.Object3D(),
+		pointLight = new THREE.PointLight(0xFFFFFF, 2, 50),
+		box = new THREE.BoxGeometry(1, 1, 1),
+		mat = new THREE.MeshBasicMaterial({ color: 0x00FF00 }),
+		mesh = new THREE.Mesh(box, mat);
+
+
+	window.p = pointLight;
+
+	obj.position.set(0, 1, 0);
+
+	obj.add(pointLight);
+	obj.add(mesh);
+
+
+	return obj;
 })();
 
 
@@ -1582,6 +1635,8 @@ engine.map = (function() {
 
 	var scene = new THREE.Scene();
 	scene.add(engine.topdownCamera.obj);
+	scene.add(engine.player);
+
 	window.scene = scene;
 
 

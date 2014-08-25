@@ -10,6 +10,7 @@ files = [
     'intro.js',
     'utils.js',
     'shaders.js',
+    'materials.js',
     'userinput.js',
     'display.js',
     'camera.js',
@@ -17,6 +18,7 @@ files = [
     'pathfinding.js',
     'overlays.js',
     'map.js',
+    'player.js',
     'main.js',
     'outro.js'
 ]

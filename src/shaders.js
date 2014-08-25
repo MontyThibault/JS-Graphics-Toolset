@@ -2,13 +2,8 @@ engine.shaders = (function() {
 
 	var shaders = {},
 		files = [
-		'gridHighlightF',
-		'gridHighlightV',
-		'overlayColorF',
-		'overlayConstantF',
-		'selectionPlaneF',
-		'selectionPlaneV',
-		'standardV'],
+		'blackWhite.vert',
+		'blackWhite.frag'],
 		$path = $('#path');
 
 	function load(callback) {
@@ -21,6 +16,7 @@ engine.shaders = (function() {
 			if(files.length) {
 				load(callback);
 			} else {
+				engine.initMaterials();
 				callback();
 			}
 		});

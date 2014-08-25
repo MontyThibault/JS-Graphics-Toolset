@@ -20,6 +20,8 @@
 
 	var scene = new THREE.Scene();
 	scene.add(engine.topdownCamera.obj);
+	scene.add(engine.player);
+
 	window.scene = scene;
 
 
