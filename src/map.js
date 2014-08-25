@@ -28,7 +28,7 @@ engine.map = (function() {
                 texture.minFilter = THREE.NearestFilter;
                 texture.anisotropy = 16;
 
-	    		exports.material = new engine.materials.terrain({
+	    		exports.material = new engine.materials.darkness({
 	    			map: texture
 	    		});
 

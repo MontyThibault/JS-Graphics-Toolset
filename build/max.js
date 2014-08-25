@@ -151,8 +151,8 @@ engine.shaders = (function() {
 
 	var shaders = {},
 		files = [
-		'blackWhite.vert',
-		'blackWhite.frag'],
+		'darkness.vert',
+		'darkness.frag'],
 		$path = $('#path');
 
 	function load(callback) {
@@ -184,7 +184,7 @@ engine.shaders = (function() {
 engine.materials = {};
 engine.initMaterials = function() {
 
-	engine.materials.terrain = function(config) {
+	engine.materials.darkness = function(config) {
 
 		var uniforms = THREE.UniformsUtils.merge([
 			THREE.UniformsLib.common,
@@ -192,11 +192,10 @@ engine.initMaterials = function() {
 		]);
 
 		uniforms.map.value = config.map;
-
 		var mat = new THREE.ShaderMaterial({
 			lights: true,
-			vertexShader: engine.shaders['blackWhite.vert'],
-			fragmentShader: engine.shaders['blackWhite.frag'],
+			vertexShader: engine.shaders['darkness.vert'],
+			fragmentShader: engine.shaders['darkness.frag'],
 			uniforms: uniforms
 		});
 
@@ -1570,7 +1569,7 @@ engine.map = (function() {
                 texture.minFilter = THREE.NearestFilter;
                 texture.anisotropy = 16;
 
-	    		exports.material = new engine.materials.terrain({
+	    		exports.material = new engine.materials.darkness({
 	    			map: texture
 	    		});
 

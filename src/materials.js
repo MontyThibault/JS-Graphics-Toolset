@@ -2,7 +2,7 @@
 engine.materials = {};
 engine.initMaterials = function() {
 
-	engine.materials.terrain = function(config) {
+	engine.materials.darkness = function(config) {
 
 		var uniforms = THREE.UniformsUtils.merge([
 			THREE.UniformsLib.common,
@@ -10,11 +10,10 @@ engine.initMaterials = function() {
 		]);
 
 		uniforms.map.value = config.map;
-
 		var mat = new THREE.ShaderMaterial({
 			lights: true,
-			vertexShader: engine.shaders['blackWhite.vert'],
-			fragmentShader: engine.shaders['blackWhite.frag'],
+			vertexShader: engine.shaders['darkness.vert'],
+			fragmentShader: engine.shaders['darkness.frag'],
 			uniforms: uniforms
 		});
 

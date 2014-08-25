@@ -2,8 +2,8 @@ engine.shaders = (function() {
 
 	var shaders = {},
 		files = [
-		'blackWhite.vert',
-		'blackWhite.frag'],
+		'darkness.vert',
+		'darkness.frag'],
 		$path = $('#path');
 
 	function load(callback) {
