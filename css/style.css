@@ -33,3 +33,19 @@ canvas {
 	left: 0px;
 	width: 30%;
 }
+
+#info {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	right: 0px;
+	padding: 5px;
+	background: black;
+	color: white;
+	text-align: center;
+	font-family: 'Arial';
+}
+
+#info a {
+	color: #FFFFFF;
+}
