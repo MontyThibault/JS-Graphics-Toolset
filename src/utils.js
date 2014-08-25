@@ -35,10 +35,10 @@ engine.project = (function() {
 	var vec = new THREE.Vector3(),
 		projector = new THREE.Projector();
 
-	return function(v) {
+	return function(v, cam) {
 		return projector.projectVector(
 			vec.copy(v), 
-			engine.camera.cam);
+			cam);
 	};
 })();
 
@@ -46,10 +46,10 @@ engine.unproject = (function() {
 	var vec = new THREE.Vector3(),
 		projector = new THREE.Projector();
 
-	return function(v) {
+	return function(v, cam) {
 		return projector.unprojectVector(
 			vec.copy(v), 
-			engine.camera.cam);
+			cam);
 	};
 })();
 
@@ -62,10 +62,9 @@ engine.raycastMouse = (function() {
 	plane.rotation.x = -Math.PI / 2; // Flat
 	plane.updateMatrixWorld(); // Or else raycasting doesn't work properly
 
-	return function(clientX, clientY, objects) {
-		var camera = engine.camera.cam,
-			cameraPosition = 
-				new THREE.Vector3().setFromMatrixPosition(camera.matrixWorld);
+	return function(clientX, clientY, cam, objects) {
+		var cameraPosition = 
+				new THREE.Vector3().setFromMatrixPosition(cam.matrixWorld);
 
 		// if(!engine.userInput.pressed.l) return false;
 
@@ -74,7 +73,7 @@ engine.raycastMouse = (function() {
 			clientY, 
 			0.5);
 		mouse = engine.relativeCoord(mouse);
-		mouse = engine.unproject(mouse, camera);
+		mouse = engine.unproject(mouse, cam);
 
 		return engine.intersect(
 			cameraPosition, 

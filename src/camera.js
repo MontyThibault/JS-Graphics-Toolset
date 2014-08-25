@@ -74,7 +74,7 @@ engine.tumbleCamera = (function() {
             // Project the current mouse position to a (mostly) infinite ground 
             // plane. This allows us to compute camera movements in world space,
             // rather than screen space.
-            var intersect = engine.raycastMouse(e.clientX, e.clientY)[0];
+            var intersect = engine.raycastMouse(e.clientX, e.clientY, exports.cam)[0];
             if(intersect) {
                 activeButton = 'l';
                 mouseDragOld = intersect.point;
@@ -102,11 +102,6 @@ engine.tumbleCamera = (function() {
             diffY = e.clientY - clientYOld;
         clientXOld = e.clientX;
         clientYOld = e.clientY;
-
-        // 
-        if((diffX === NaN) || (diffY === NaN)) {
-        	return;
-        }
         
         if(activeButton === 'r') {
             
@@ -128,7 +123,8 @@ engine.tumbleCamera = (function() {
         // Find how much the mouse has moved in world space since the last frame
         var intersect = engine.raycastMouse(
             engine.userInput.clientX, 
-            engine.userInput.clientY)[0];
+            engine.userInput.clientY,
+            exports.cam)[0];
 
         if(!intersect) return;
 
@@ -147,7 +143,7 @@ engine.tumbleCamera = (function() {
 })();
 
 engine.topdownCamera = (function() {
-	var zoom, yaw, pivot,
+	var zoom, yaw, dragPivot, keyboardPivot,
 		exports = {
 			init: init,
 			listen: listen,
@@ -158,38 +154,45 @@ engine.topdownCamera = (function() {
 
 	function init() {
 		exports.cam = new THREE.PerspectiveCamera(
-	        60, 
+	        80, 
 			window.innerWidth / window.innerHeight, 
 			0.01, 
 			10000);
 
-		
+		dragPivot = new THREE.Object3D();
 		yaw = new THREE.Object3D();
-		pivot = new THREE.Object3D();
+		keyboardPivot = new THREE.Object3D();
 		zoom = new THREE.Object3D();
 
 		// As default, set cam one unit away, looking downwards.
 		exports.cam.position.set(0, 1, 0.3);
 		exports.cam.lookAt(new THREE.Vector3());
 		
+		dragPivot.position.set(0, 0, 0);
 		yaw.rotation.y = 0;
-		pivot.position.set(0, 0, 0);
-		zoom.scale.set(10, 10, 10);
+		keyboardPivot.position.set(0, 0, 0);
+		zoom.scale.set(7, 7, 7);
+
 		
-		// Each object controls one aspect of the transform. They placed in
-		// the following hierarchy: yaw -> pivot -> zoom -> camera;
-		yaw.add(pivot);
-		pivot.add(zoom);
+		// Each object controls one aspect of the transform. They placed in the 
+		// following hierarchy: dragPivot -> yaw -> keyboardPivot -> zoom -> camera
+
+		dragPivot.add(yaw); // cannot be transformed, so it is at the top
+		yaw.add(keyboardPivot);
+
+		// must come after the yaw transformation so that "up" keeps going upwards!
+		keyboardPivot.add(zoom);
 		zoom.add(exports.cam);
+
 
 		// Since pivot is the topmost object, it will be one that is added to
 		// the scene
-		exports.obj = yaw;
+		exports.obj = dragPivot;
 	}
 
 	function listen() {
 		window.addEventListener('resize', resize, false);
-		engine.userInput.mm.push(mousemove);
+		engine.userInput.md.push(mousedown);
 	}
 
 	function resize() {
@@ -197,45 +200,111 @@ engine.topdownCamera = (function() {
 		exports.cam.updateProjectionMatrix();
 	}
 
+	// Here, the `target` object holds the ideal values for positioning/rotation/scale
+	// moveTowardsTarget() will interpolate some percentage between the values
+	// Thus creating a nice smoothing effect, sort of like Zeno's paradox
 
 	var w = 'W'.charCodeAt(0),
 		s = 'S'.charCodeAt(0),
 		a = 'A'.charCodeAt(0),
 		d = 'D'.charCodeAt(0),
+		q = 'Q'.charCodeAt(0),
+		e = 'E'.charCodeAt(0),
 
-		keySensitivity = 0.15;
-
+		target = new THREE.Object3D(),
+		moveSensitivity = 0.15,
+		rotateSensitivity = 0.05;
 
 	function update() {
+		moveTarget();
+		moveTowardsTarget();
+		updateDrag();
+	}
+
+	function moveTarget() {
+		if('l' in engine.userInput.pressed) return;
+
 		if(w in engine.userInput.pressed) {
-			pivot.position.z -= keySensitivity;
+			target.position.z -= moveSensitivity;
 		}
 
 		if(s in engine.userInput.pressed) {
-			pivot.position.z += keySensitivity;
+			target.position.z += moveSensitivity;
 		}
 
 		if(a in engine.userInput.pressed) {
-			pivot.position.x -= keySensitivity;
+			target.position.x -= moveSensitivity;
 		}
 
 		if(d in engine.userInput.pressed) {
-			pivot.position.x += keySensitivity;
+			target.position.x += moveSensitivity;
+		}
+
+		if(q in engine.userInput.pressed) {
+			target.rotation.y -= rotateSensitivity;
+		}
+
+		if(e in engine.userInput.pressed) {
+			target.rotation.y += rotateSensitivity;
 		}
 	}
 
-	var oldClientX,
-		diffX;
-	function mousemove(e) {
-		diffX = e.clientX - oldClientX;
-		oldClientX = e.clientX;
-		
-		// First time this is called, oldClientX does not exist
-		// and will cause an error
-		if(isNaN(diffX)) return;
+	function moveTowardsTarget() {
+		if(!target || !keyboardPivot) return;
 
-		yaw.rotation.y -= diffX / 400;
+		// Position
+
+		var diff = new THREE.Vector3();
+		diff.subVectors(target.position, keyboardPivot.position);
+		
+		// Move the camera 10% percent the displacement
+		diff.multiplyScalar(0.1);
+		keyboardPivot.position.add(diff);
+
+		// Rotation
+
+		diff = target.rotation.y - yaw.rotation.y;
+		diff *= 0.1;
+		yaw.rotation.y += diff;
 	}
+
+	var mouseDragOld, mouseDragNew;
+	function mousedown(button, e) {
+        if(button === 'l') {
+            // Project the current mouse position to a (mostly) infinite ground 
+            // plane. This allows us to compute camera movements in world space,
+            // rather than screen space.
+            var intersect = engine.raycastMouse(e.clientX, e.clientY, 
+            		exports.cam)[0];
+
+            if(intersect) {
+                mouseDragOld = intersect.point;
+            }
+        }
+    }
+
+    function updateDrag() {
+    	if(!('l' in engine.userInput.pressed)) {
+    		dragPivot.position.multiplyScalar(0.9);
+    		return;
+    	}
+
+        // Find how much the mouse has moved in world space since the last frame
+        var intersect = engine.raycastMouse(
+            engine.userInput.clientX, 
+            engine.userInput.clientY,
+            exports.cam)[0];
+
+        if(!intersect) return;
+
+        mouseDragNew = intersect.point;
+        
+		var diff = new THREE.Vector3();
+		diff.subVectors(mouseDragOld, mouseDragNew);
+		
+		diff.multiplyScalar(0.1);
+		dragPivot.position.add(diff);
+    }
 
 	return exports;
 
