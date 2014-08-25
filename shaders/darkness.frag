@@ -139,7 +139,7 @@ void main() {
 
 /////////////////////
 vec3 not_vLightFront = vLightFront - 0.9; 
-not_vLightFront = not_vLightFront * 1000.0;
+not_vLightFront = not_vLightFront * 3.0;
 not_vLightFront = min(not_vLightFront, 1.0);
 
 gl_FragColor.xyz *= not_vLightFront;

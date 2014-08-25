@@ -1599,6 +1599,7 @@ engine.player = (function() {
 		mesh = new THREE.Mesh(box, mat);
 
 	pointLight.position.set(0, 3, 0);
+	mesh.scale.multiplyScalar(0.3);
 
 	obj.add(pointLight);
 	obj.add(mesh);
