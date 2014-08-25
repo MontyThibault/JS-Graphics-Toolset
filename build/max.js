@@ -192,7 +192,8 @@ engine.initMaterials = function() {
 		]);
 
 		uniforms.map.value = config.map;
-		uniforms.diffuse.value = new THREE.Color(0xFF0000);
+		uniforms.map.value.needsUpdate = true;
+		// uniforms.diffuse.value = new THREE.Color(0xFF0000);
 
 
 		var mat = new THREE.ShaderMaterial({
@@ -201,6 +202,8 @@ engine.initMaterials = function() {
 			fragmentShader: engine.shaders['blackWhite.frag'],
 			uniforms: uniforms
 		});
+
+		mat.map = config.map;
 
 		return mat;
 	}
@@ -538,7 +541,7 @@ engine.topdownCamera = (function() {
 		
 		yaw.rotation.y = 0;
 		pivot.position.set(0, 0, 0);
-		zoom.scale.set(10, 10, 10);
+		zoom.scale.set(7, 7, 7);
 		
 		// Each object controls one aspect of the transform. They placed in
 		// the following hierarchy: pivot -> yaw -> zoom -> camera;

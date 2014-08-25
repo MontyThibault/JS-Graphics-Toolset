@@ -163,7 +163,7 @@ engine.topdownCamera = (function() {
 		
 		yaw.rotation.y = 0;
 		pivot.position.set(0, 0, 0);
-		zoom.scale.set(10, 10, 10);
+		zoom.scale.set(7, 7, 7);
 		
 		// Each object controls one aspect of the transform. They placed in
 		// the following hierarchy: pivot -> yaw -> zoom -> camera;

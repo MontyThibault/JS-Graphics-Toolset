@@ -10,7 +10,8 @@ engine.initMaterials = function() {
 		]);
 
 		uniforms.map.value = config.map;
-		uniforms.diffuse.value = new THREE.Color(0xFF0000);
+		uniforms.map.value.needsUpdate = true;
+		// uniforms.diffuse.value = new THREE.Color(0xFF0000);
 
 
 		var mat = new THREE.ShaderMaterial({
@@ -19,6 +20,8 @@ engine.initMaterials = function() {
 			fragmentShader: engine.shaders['blackWhite.frag'],
 			uniforms: uniforms
 		});
+
+		mat.map = config.map;
 
 		return mat;
 	}
