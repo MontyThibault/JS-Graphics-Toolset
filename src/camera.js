@@ -206,6 +206,9 @@ engine.topdownCamera = (function() {
 		moveTarget();
 		moveTowardsTarget();
 		updateDrag();
+
+
+		engine.player.position.copy(target.position);
 	}
 
 	function moveTarget() {

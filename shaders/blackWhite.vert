@@ -406,6 +406,7 @@ for( int i = 0; i < MAX_DIR_LIGHTS; i ++ ) {
 
 	#endif
 
+
 	vLightFront += directionalLightColor[ i ] * directionalLightWeighting;
 
 	#ifdef DOUBLE_SIDED
@@ -458,6 +459,11 @@ for( int i = 0; i < MAX_DIR_LIGHTS; i ++ ) {
 			#endif
 
 		#endif
+
+		//////////////////////////////////
+		//pointLightWeighting *= 1000.0;
+		//pointLightWeighting = min(pointLightWeighting, 1.0);
+
 
 		vLightFront += pointLightColor[ i ] * pointLightWeighting * lDistance;
 

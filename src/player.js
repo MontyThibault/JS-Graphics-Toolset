@@ -6,10 +6,7 @@ engine.player = (function() {
 		mat = new THREE.MeshBasicMaterial({ color: 0x00FF00 }),
 		mesh = new THREE.Mesh(box, mat);
 
-
-	window.p = pointLight;
-
-	obj.position.set(0, 1, 0);
+	pointLight.position.set(0, 3, 0);
 
 	obj.add(pointLight);
 	obj.add(mesh);

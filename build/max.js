@@ -192,9 +192,6 @@ engine.initMaterials = function() {
 		]);
 
 		uniforms.map.value = config.map;
-		uniforms.map.value.needsUpdate = true;
-		// uniforms.diffuse.value = new THREE.Color(0xFF0000);
-
 
 		var mat = new THREE.ShaderMaterial({
 			lights: true,
@@ -584,6 +581,9 @@ engine.topdownCamera = (function() {
 		moveTarget();
 		moveTowardsTarget();
 		updateDrag();
+
+
+		engine.player.position.copy(target.position);
 	}
 
 	function moveTarget() {
@@ -1599,10 +1599,7 @@ engine.player = (function() {
 		mat = new THREE.MeshBasicMaterial({ color: 0x00FF00 }),
 		mesh = new THREE.Mesh(box, mat);
 
-
-	window.p = pointLight;
-
-	obj.position.set(0, 1, 0);
+	pointLight.position.set(0, 3, 0);
 
 	obj.add(pointLight);
 	obj.add(mesh);

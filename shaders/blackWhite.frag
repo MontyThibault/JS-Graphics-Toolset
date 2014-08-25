@@ -1,5 +1,10 @@
 uniform vec3 diffuse;
 uniform float opacity;
+
+/////////////
+varying vec3 vLightFront;
+
+
 #ifdef USE_COLOR
 
 	varying vec3 vColor;
@@ -131,6 +136,16 @@ void main() {
 
 #endif
 
+
+/////////////////////
+vec3 not_vLightFront = vLightFront - 0.9; 
+not_vLightFront = not_vLightFront * 1000.0;
+not_vLightFront = min(not_vLightFront, 1.0);
+
+gl_FragColor.xyz *= not_vLightFront;
+
+
+
 float specularStrength;
 
 #ifdef USE_SPECULARMAP
@@ -140,7 +155,8 @@ float specularStrength;
 
 #else
 
-	specularStrength = 1.0;
+
+specularStrength = 1.0;
 
 #endif
 #ifdef USE_LIGHTMAP
