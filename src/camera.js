@@ -55,9 +55,7 @@ engine.tumbleCamera = (function() {
 
 	function listen() {
 		window.addEventListener('resize', resize, false);
-
 		engine.userInput.md.push(mousedown);
-		engine.userInput.mu.push(mouseup);
 		engine.userInput.mm.push(mousemove);
 	}
 	
@@ -86,15 +84,8 @@ engine.tumbleCamera = (function() {
             clientYOld = e.clientY;
         }
 	}
-	
-	function mouseup() {
-        activeButton = false;
-        mouseDragOld = undefined;
-	}
-	
-	function mousemove(e) {
-        if((activeButton !== 'r') && (activeButton !== 'm')) { return; }
 
+	function mousemove(e) {
 
         // Calculate how much the mouse have moved in screen space since the 
         // last frame
@@ -103,14 +94,16 @@ engine.tumbleCamera = (function() {
         clientXOld = e.clientX;
         clientYOld = e.clientY;
         
-        if(activeButton === 'r') {
+        if('r' in engine.userInput.pressed) {
             
             yaw.rotation.y -= diffX / 200;
             pitch.rotation.z += diffY / 200;
             limits();
      
-        } else if(activeButton === 'm') {
-            
+        } 
+
+        if('m' in engine.userInput.pressed) {
+       
             var factor = Math.pow(1.01, diffY);
 			zoom.scale.multiplyScalar(factor);
 			limits();
@@ -118,7 +111,7 @@ engine.tumbleCamera = (function() {
 	}
 	
 	function update() {
-        if(activeButton !== 'l') { return; }
+        if(!('l' in engine.userInput.pressed)) { return; }
 
         // Find how much the mouse has moved in world space since the last frame
         var intersect = engine.raycastMouse(
@@ -170,7 +163,7 @@ engine.topdownCamera = (function() {
 		
 		yaw.rotation.y = 0;
 		pivot.position.set(0, 0, 0);
-		zoom.scale.set(7, 7, 7);
+		zoom.scale.set(10, 10, 10);
 		
 		// Each object controls one aspect of the transform. They placed in
 		// the following hierarchy: pivot -> yaw -> zoom -> camera;
@@ -206,7 +199,8 @@ engine.topdownCamera = (function() {
 
 		target = new THREE.Object3D(),
 		moveSensitivity = 0.2,
-		rotateSensitivity = 0.05;
+		rotateSensitivity = 0.05, 
+		smoothness = 0.1;
 
 	function update() {
 		moveTarget();
@@ -255,15 +249,15 @@ engine.topdownCamera = (function() {
 		var diff = new THREE.Vector3();
 		diff.subVectors(target.position, pivot.position);
 		
-		// Move the camera 10% percent the displacement
-		diff.multiplyScalar(0.1);
+		// Move the camera only a fraction of the displacement
+		diff.multiplyScalar(smoothness);
 		pivot.position.add(diff);
 
 
 		// Rotation
 
 		diff = target.rotation.y - yaw.rotation.y;
-		diff *= 0.1;
+		diff *= smoothness;
 		yaw.rotation.y += diff;
 	}
 
@@ -284,7 +278,6 @@ engine.topdownCamera = (function() {
 
     function updateDrag() {
     	if(!('l' in engine.userInput.pressed)) { return; }
-    	console.log(engine.userInput.pressed);
 
         // Find how much the mouse has moved in world space since the last frame
         var intersect = engine.raycastMouse(
@@ -298,10 +291,8 @@ engine.topdownCamera = (function() {
         
 		var diff = new THREE.Vector3();
 		diff.subVectors(mouseDragOld, mouseDragNew);
-		
-		// Move the camera 50% percent the displacement
-        // This creates a neat smoothing effect. Otherwise it seems jittery
-		diff.multiplyScalar(0.2);
+
+		diff.multiplyScalar(smoothness);
 		pivot.position.add(diff);
     }
 

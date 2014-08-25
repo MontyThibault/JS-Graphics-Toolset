@@ -29,6 +29,8 @@
 
 		if(engine.fps === 60) {
             window.requestAnimationFrame(frame);
+		} else if(engine.fps === 0) {
+			window.setZeroTimeout(frame); // MAXIMUM PERFORMANCE
 		} else {
             window.setTimeout(frame, 1000 / engine.fps);
 		}
