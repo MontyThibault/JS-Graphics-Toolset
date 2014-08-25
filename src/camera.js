@@ -143,7 +143,7 @@ engine.tumbleCamera = (function() {
 })();
 
 engine.topdownCamera = (function() {
-	var zoom, yaw, dragPivot, keyboardPivot,
+	var zoom, yaw, pivot,
 		exports = {
 			init: init,
 			listen: listen,
@@ -159,35 +159,28 @@ engine.topdownCamera = (function() {
 			0.01, 
 			10000);
 
-		dragPivot = new THREE.Object3D();
+		
 		yaw = new THREE.Object3D();
-		keyboardPivot = new THREE.Object3D();
+		pivot = new THREE.Object3D();
 		zoom = new THREE.Object3D();
 
 		// As default, set cam one unit away, looking downwards.
 		exports.cam.position.set(0, 1, 0.3);
 		exports.cam.lookAt(new THREE.Vector3());
 		
-		dragPivot.position.set(0, 0, 0);
 		yaw.rotation.y = 0;
-		keyboardPivot.position.set(0, 0, 0);
+		pivot.position.set(0, 0, 0);
 		zoom.scale.set(7, 7, 7);
-
 		
-		// Each object controls one aspect of the transform. They placed in the 
-		// following hierarchy: dragPivot -> yaw -> keyboardPivot -> zoom -> camera
-
-		dragPivot.add(yaw); // cannot be transformed, so it is at the top
-		yaw.add(keyboardPivot);
-
-		// must come after the yaw transformation so that "up" keeps going upwards!
-		keyboardPivot.add(zoom);
+		// Each object controls one aspect of the transform. They placed in
+		// the following hierarchy: pivot -> yaw -> zoom -> camera;
+		pivot.add(yaw);
+		yaw.add(zoom);
 		zoom.add(exports.cam);
-
 
 		// Since pivot is the topmost object, it will be one that is added to
 		// the scene
-		exports.obj = dragPivot;
+		exports.obj = pivot;
 	}
 
 	function listen() {
@@ -200,7 +193,7 @@ engine.topdownCamera = (function() {
 		exports.cam.updateProjectionMatrix();
 	}
 
-	// Here, the `target` object holds the ideal values for positioning/rotation/scale
+	// Here, the `target` object holds the ideal values for positioning/rotation/scale.
 	// moveTowardsTarget() will interpolate some percentage between the values
 	// Thus creating a nice smoothing effect, sort of like Zeno's paradox
 
@@ -212,7 +205,7 @@ engine.topdownCamera = (function() {
 		e = 'E'.charCodeAt(0),
 
 		target = new THREE.Object3D(),
-		moveSensitivity = 0.15,
+		moveSensitivity = 0.2,
 		rotateSensitivity = 0.05;
 
 	function update() {
@@ -225,19 +218,24 @@ engine.topdownCamera = (function() {
 		if('l' in engine.userInput.pressed) return;
 
 		if(w in engine.userInput.pressed) {
-			target.position.z -= moveSensitivity;
+			target.position.z -= Math.cos(yaw.rotation.y) * moveSensitivity;
+			target.position.x -= Math.sin(yaw.rotation.y) * moveSensitivity;
 		}
 
 		if(s in engine.userInput.pressed) {
-			target.position.z += moveSensitivity;
+			target.position.z += Math.cos(yaw.rotation.y) * moveSensitivity;
+			target.position.x += Math.sin(yaw.rotation.y) * moveSensitivity;
 		}
 
+		var r = Math.PI / 2;
 		if(a in engine.userInput.pressed) {
-			target.position.x -= moveSensitivity;
+			target.position.z -= Math.cos(yaw.rotation.y + r) * moveSensitivity;
+			target.position.x -= Math.sin(yaw.rotation.y + r) * moveSensitivity;
 		}
 
 		if(d in engine.userInput.pressed) {
-			target.position.x += moveSensitivity;
+			target.position.z -= Math.cos(yaw.rotation.y - r) * moveSensitivity;
+			target.position.x -= Math.sin(yaw.rotation.y - r) * moveSensitivity;
 		}
 
 		if(q in engine.userInput.pressed) {
@@ -250,16 +248,17 @@ engine.topdownCamera = (function() {
 	}
 
 	function moveTowardsTarget() {
-		if(!target || !keyboardPivot) return;
+		if(!target || !pivot) return;
 
 		// Position
 
 		var diff = new THREE.Vector3();
-		diff.subVectors(target.position, keyboardPivot.position);
+		diff.subVectors(target.position, pivot.position);
 		
 		// Move the camera 10% percent the displacement
 		diff.multiplyScalar(0.1);
-		keyboardPivot.position.add(diff);
+		pivot.position.add(diff);
+
 
 		// Rotation
 
@@ -284,10 +283,8 @@ engine.topdownCamera = (function() {
     }
 
     function updateDrag() {
-    	if(!('l' in engine.userInput.pressed)) {
-    		dragPivot.position.multiplyScalar(0.9);
-    		return;
-    	}
+    	if(!('l' in engine.userInput.pressed)) { return; }
+    	console.log(engine.userInput.pressed);
 
         // Find how much the mouse has moved in world space since the last frame
         var intersect = engine.raycastMouse(
@@ -302,8 +299,10 @@ engine.topdownCamera = (function() {
 		var diff = new THREE.Vector3();
 		diff.subVectors(mouseDragOld, mouseDragNew);
 		
-		diff.multiplyScalar(0.1);
-		dragPivot.position.add(diff);
+		// Move the camera 50% percent the displacement
+        // This creates a neat smoothing effect. Otherwise it seems jittery
+		diff.multiplyScalar(0.2);
+		pivot.position.add(diff);
     }
 
 	return exports;
