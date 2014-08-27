@@ -46,24 +46,46 @@ engine.map = (function() {
 	    			map: texture
 	    		});
 
-                drawLines(geometry.viewOcclusion);
+                var lines = drawLines(geometry.viewOcclusion);
 
 	    		exports.mesh = new THREE.Mesh(geometry, exports.material);
 
-	    		callback(exports.mesh);
-	    	});
+	    		//callback(exports.mesh);
+                var obj = new THREE.Object3D();
+                obj.add(lines);
+                obj.add(exports.mesh);
+                callback(obj);
+            });
 	    });
     }
 
-    function drawLines(viewOcclusion) {
+    function drawLines(v) {
 
         var material = new THREE.LineBasicMaterial({
-            color: 0x0000ff
+            color: 0x7777ff,
+            linewidth: 2
         });
+        // material.depthWrite = false;
+        // material.depthTest = false;
 
-        var lines = new THREE.Geometry();
+        var bigObj = new THREE.Object3D(),  
+            geo, line;
+        for(var i = 0; i < v.edges.length; i++) {
+            for(var j = 0; j < v.edges[i].length; j++) {
 
+                geo = new THREE.Geometry();
+                geo.vertices.push(v.vertices[i], v.vertices[v.edges[i][j]]);
+                
+                line = new THREE.Line(geo, material);
+                bigObj.add(line);
+            }
+        }
+     
+        bigObj.position.set(0, 1, 0);
+        bigObj.scale.set(1.1, 1.1, 1.1); // This is bizarre
+        // bigObj.renderDepth = 1e20;
 
+        return bigObj;
     }
 
     return exports;
