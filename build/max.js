@@ -1655,7 +1655,7 @@ engine.map = (function() {
         }
      
         bigObj.position.set(0, 1, 0);
-        bigObj.scale.set(1.1, 1.1, 1.1); // This is bizarre
+        // bigObj.scale.set(1.1, 1.1, 1.1); // This is bizarre
         // bigObj.renderDepth = 1e20;
 
         return bigObj;
