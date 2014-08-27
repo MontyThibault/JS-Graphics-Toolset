@@ -1,5 +1,5 @@
 /* Created by Monty Thibault
-   Last updated Aug 25, 2014
+   Last updated Aug 27, 2014
    montythibault@gmail.com */
 
 
@@ -1539,6 +1539,22 @@ engine.overlays = (function() {
 //////////////////
 // map.js
 
+// Create a wrapper for the parsing function, which is automatically called by 
+// JSONLoader
+var oldParse = THREE.JSONLoader.prototype.parse;
+THREE.JSONLoader.prototype.parse = function(json, texturePath) {
+    var obj = oldParse(json, texturePath),
+        geo = obj.geometry;
+
+    geo.viewOcclusion = oldParse(json.viewOcclusion, texturePath).geometry;
+    geo.viewOcclusion.edges = json.viewOcclusion.edges;
+
+    console.log(json);
+
+    return obj;
+};
+
+
 engine.map = (function() {
     
     // aspects of a map:
@@ -1558,8 +1574,8 @@ engine.map = (function() {
 
     function load(callback) {
     	var loader = new THREE.JSONLoader();
-        $path.text('assets/samplemap/mapflipped.js');
-	    loader.load('assets/samplemap/mapflipped.js', function (geometry) {
+        $path.text('assets/samplemap/map.js');
+	    loader.load('assets/samplemap/map.js', function (geometry) {
 
             $path.text('assets/samplemap/Colormap.png');
 	    	THREE.ImageUtils.loadTexture('assets/samplemap/Colormap.png', 
@@ -1573,7 +1589,7 @@ engine.map = (function() {
 	    			map: texture
 	    		});
 
-                window.mat = exports.material;
+                console.log(geometry);
 
 	    		exports.mesh = new THREE.Mesh(geometry, exports.material);
 
