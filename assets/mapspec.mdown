@@ -41,9 +41,38 @@ The "viewocclusion" object has a special "edges" property not found in the norma
 	"viewocclusion" : {
 		"metadata" : ...
 		"vertices" : ...
-		"edges" : ...
+		"edges" : ... (singly linked edge array)
 
 		...
 	}
 
 }`
+
+------------------------
+
+Check out the [THREE.js JSON Model Format 3.1](https://github.com/mrdoob/three.js/wiki/JSON-Model-format-3).
+
+
+## Storing Edges 
+
+The `edges` object has the following structure: it is an array where the indicies correspond to the order that the vertices are defined. For instance, edges[0] is talking about verticies[0], edges[1] is talking about verticies[1], ... edges[n] is talking about verticies[n]. For each of these, there is another array which specifies the indicies of other verticies that the current vertex forms edges with.
+
+`"edges" : [[3], [4, 2], [1, 3], [2, 0], [5, 1], [4, 6] ... ]`
+
+Here, we are given data about the following edge connections, with the integers refering to the indicies of the verticies involved: `[(0, 3), (1, 4), (1, 2), (2, 1), (2, 3), (3, 2), (3, 0), (4, 5), (4, 1), (5, 4), (5, 6) ... ]` 
+
+You may notice that there is some redundency in the data that can be extracted. Namely, vertex 0 will list an edge being formed with vertex 3, and vertex 3 will list an edge being formed with vertex 0! Above, this can be seen by tuples that have the form (a, b) and (b, a), which essentially represent the same thing. The data we're talking about here is unordered; there is no "first vertex" and "second vertex" to an edge.
+
+It's a useful datastructure though, because we can query any vertex and see exactly all the edges that it is connected to. For creating a pathfinding linkage, this comes in very useful. For the purposes of creating a view occluder, where all of the edges are going to be looped through anyways, it's a waste of data.
+
+I will refer to this sort of edge array as a *doubly linked edge array*. 
+
+It's a simple process to remove the redundency - only list vertices ABOVE the current one that form edges. The previous tuples (a, b) and (b, a) and be transformed into a single (a, b) where a < b. Stated differently, you can only talk about forming edges with other vertices that high indicies in the array, because the piece of information that states the edge connection between this vertex and the verticies previous will already have been added in! Our previous array with this new consideration looks like this:
+
+`"edges" : [[3], [4, 2], [3], [], [5], [6] ... ]`
+
+And yeilds these tuple pairs of edges:
+
+`[(0, 3), (1, 4), (1, 2), (2, 3), (4, 5), (5, 6) ... ]` 
+
+Now each edge exists only once in the system. I will refer to this sort of edge array as the *singly linked edge array*. The python exporter script can do both, and I will specify what type I am using throughout the source code/JSON specs.

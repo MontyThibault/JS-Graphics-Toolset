@@ -8,8 +8,6 @@ THREE.JSONLoader.prototype.parse = function(json, texturePath) {
     geo.viewOcclusion = oldParse(json.viewOcclusion, texturePath).geometry;
     geo.viewOcclusion.edges = json.viewOcclusion.edges;
 
-    console.log(json);
-
     return obj;
 };
 

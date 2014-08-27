@@ -9,8 +9,18 @@ out = [[] for i in object.vertices]
 
 for edge in object.edges:
     
-	out[edge.vertices[0]].append(edge.vertices[1])
-	out[edge.vertices[1]].append(edge.vertices[0])
+    # Doubly linked edge array
+
+	#out[edge.vertices[0]].append(edge.vertices[1])
+	#out[edge.vertices[1]].append(edge.vertices[0])
+	
+
+	# Singly linked edge array
+	if edge.vertices[0] > edge.vertices[1]:
+		out[edge.vertices[1]].append(edge.vertices[0])
+	else:
+		out[edge.vertices[0]].append(edge.vertices[1])
+
 
 save = open('C:/Users/Monty/Desktop/Data/THREE/Models/Terrain/edgeExport.txt', 'w')
 save.write(str(out))
