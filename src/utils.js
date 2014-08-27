@@ -95,6 +95,8 @@ engine.addPoint = function(vector, scale) {
 };
 
 
+
+
 // Only add setZeroTimeout to the window object, and hide everything
 // else in a closure.
 (function() {

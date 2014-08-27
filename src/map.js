@@ -46,13 +46,24 @@ engine.map = (function() {
 	    			map: texture
 	    		});
 
-                console.log(geometry);
+                drawLines(geometry.viewOcclusion);
 
 	    		exports.mesh = new THREE.Mesh(geometry, exports.material);
 
 	    		callback(exports.mesh);
 	    	});
 	    });
+    }
+
+    function drawLines(viewOcclusion) {
+
+        var material = new THREE.LineBasicMaterial({
+            color: 0x0000ff
+        });
+
+        var lines = new THREE.Geometry();
+
+
     }
 
     return exports;

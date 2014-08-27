@@ -113,6 +113,8 @@ engine.addPoint = function(vector, scale) {
 };
 
 
+
+
 // Only add setZeroTimeout to the window object, and hide everything
 // else in a closure.
 (function() {
@@ -318,13 +320,16 @@ engine.userInput = (function() {
 engine.fps = 60;
 engine.display = (function() {
 
-	var canvas, ctx, renderer, stats,
+	var renderer, stats,
 		exports = {
 			init: init,
 			render: render,
 			listen: listen,
-			canvas: null,
-			ctx: null
+			canvas3d: null,
+			canvas2d: null,
+			ctx3d: null,
+			ctx2d: null,
+			onRender: [],
 		};
 
 	function init() {
@@ -334,10 +339,8 @@ engine.display = (function() {
 				antialias: true
 		});
 	    
-	    exports.canvas = renderer.domElement;
-	    exports.ctx = renderer.context;
-
-		$(document.body).append(exports.canvas);
+	    exports.canvas3d = renderer.domElement;
+	    exports.ctx3d = renderer.context;
 
 	    /////////////////////////////////////
 
@@ -347,17 +350,45 @@ engine.display = (function() {
 		stats.domElement.style.left = '0px';
 		stats.domElement.style.top = '0px';
 
-		$(document.body).append(stats.domElement);
+		/////////////////////////////////////
 
+		exports.canvas2d = $('<canvas></canvas>');
+		exports.canvas2d.css({
+			'z-index': 10,
+			'position': 'absolute',
+			'top': 0,
+			'left': 0
+		});
+		exports.canvas2d = exports.canvas2d[0]; // Don't store as JQuery object
+
+		exports.ctx2d = exports.canvas2d.getContext('2d');
+
+
+		$(document.body).append(exports.canvas3d);
+		$(document.body).append(stats.domElement);
+		$(document.body).append(exports.canvas2d);
 	}
 
 	function render(scene, camera) {
 		stats.update();
 		renderer.render(scene, camera);
+
+
+		if(exports.onRender.length) {
+			exports.canvas2d.width = window.innerWidth;
+			// exports.ctx2d.clearRect(0, 0, window.innerWidth, window.innerHeight);
+		}
+		
+		for(var i = 0; i < exports.onRender.length; i++) {
+			exports.onRender[i](exports.ctx2d);
+		}
 	}
 
 	function fullscreen() {
 		renderer.setSize(window.innerWidth, window.innerHeight - 5);
+
+		exports.canvas2d.width = window.innerWidth;
+		exports.canvas2d.height = window.innerHeight;
 	}
 
 	function listen() {
@@ -1588,13 +1619,24 @@ engine.map = (function() {
 	    			map: texture
 	    		});
 
-                console.log(geometry);
+                drawLines(geometry.viewOcclusion);
 
 	    		exports.mesh = new THREE.Mesh(geometry, exports.material);
 
 	    		callback(exports.mesh);
 	    	});
 	    });
+    }
+
+    function drawLines(viewOcclusion) {
+
+        var material = new THREE.LineBasicMaterial({
+            color: 0x0000ff
+        });
+
+        var lines = new THREE.Geometry();
+
+
     }
 
     return exports;
