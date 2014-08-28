@@ -143,6 +143,10 @@ bool intersect(vec2 a, vec2 b, vec2 c, vec2 d) {
 	return onLine(i, a, b) && onLine(i, c, d);
 }
 
+bool withinRadius(vec2 a, vec2 b, float radius) {
+	return ((b.x - a.x) * (b.x - a.x)) + ((b.y - a.y) * (b.y - a.y)) < (radius * radius);
+}
+
 ////////////////////////
 
 void main() {
@@ -201,17 +205,42 @@ varying vec3 vLightFront;
 varying vec4 vWorldPosition;
 
 */
-vec3 vert1, vert2;
 
-for(int i = 0; i < length(uVOEdges); i += 2) {
-	vert1 = uVOVerts[uVOEdges[i]];
-	vert2 = uVOVerts[uVOEdges[i + 1]];
 
-	// if(intersect(vert1.xz, vert2.xz, uPlayerPosition.xz, vWorldPosition.wy)) {
-	// 	gl_FragColor *= 0.0;
-	// }
+// int edgeA, edgeB;
+// vec3 vertA, vertB;
+
+// for(int i = 0; i < <uVOEdgesLength>; i += 2) {
+// 	edgeA = uVOEdges[i];
+// 	edgeB = uVOEdges[i + 1];
+
+// 	for(int j = 0; j < 200; j++) {
+// 		if(j == edgeA) {
+// 			vertA = uVOVerts[j];
+// 		}
+
+// 		if(j == edgeB) {
+// 			vertB = uVOVerts[j];
+// 		}
+// 	}
+
+
+// 	if(intersect(vertA.xz, vertB.xz, uPlayerPosition.xz, vWorldPosition.xz)) {
+// 		gl_FragColor *= 0.0;
+// 	}
+// }
+
+// if(intersect(uVOVerts[52].xz, uVOVerts[51].xz, uPlayerPosition.xz, vWorldPosition.xz)) {
+// 	gl_FragColor *= 0.2;
+// }
+
+if(withinRadius(vWorldPosition.xz, uVOVerts[51].xz, 0.5)) {
+	gl_FragColor *= 0.2;
 }
 
+if(withinRadius(vWorldPosition.xz, uVOVerts[52].xz, 0.5)) {
+	gl_FragColor *= 0.2;
+}
 
 
 float specularStrength;

@@ -33,12 +33,12 @@ engine.initMaterials = function() {
 		var vertexShader = engine.shaders['darkness.vert'],
 			fragmentShader = engine.shaders['darkness.frag'];
 
+		// TODO find replaceALL
 		fragmentShader = fragmentShader
 			.replace('<uVOVertsLength>', vo.vertices.length)
-			.replace('<uVOEdgesLength>', vo.edges.length);
-
-		console.log
-
+			.replace('<uVOEdgesLength>', vo.edgePairs.length)
+			.replace('<uVOEdgesLength>', vo.edgePairs.length)
+			.replace('<uVOEdgesLength>', vo.edgePairs.length);
 
 		var mat = new THREE.ShaderMaterial({
 			lights: true,

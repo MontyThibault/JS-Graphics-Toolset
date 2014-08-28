@@ -93,16 +93,34 @@ engine.map = (function() {
 
         var bigObj = new THREE.Object3D(),  
             geo, line;
-        for(var i = 0; i < v.edges.length; i++) {
-            for(var j = 0; j < v.edges[i].length; j++) {
+        // for(var i = 0; i < v.edges.length; i++) {
+        //     for(var j = 0; j < v.edges[i].length; j++) {
 
-                geo = new THREE.Geometry();
-                geo.vertices.push(v.vertices[i], v.vertices[v.edges[i][j]]);
+        //    
+
+        //         console.log(v.vertices[i], v.vertices[v.edges[i][j]]);
+
+        //         geo = new THREE.Geometry();
+        //         geo.vertices.push(v.vertices[i], v.vertices[v.edges[i][j]]);
                 
-                line = new THREE.Line(geo, material);
-                bigObj.add(line);
-            }
+        //         line = new THREE.Line(geo, material);
+        //         bigObj.add(line);
+        //     }
+        // }
+
+        for(var i = 0; i < v.edgePairs.length; i += 2) {
+            //if(i === 188) continue;
+
+             geo = new THREE.Geometry();
+            geo.vertices.push(v.vertices[v.edgePairs[i]], 
+                              v.vertices[v.edgePairs[i + 1]]);
+                
+            line = new THREE.Line(geo, material);
+            bigObj.add(line);
         }
+
+        console.log(v.edgePairs[188], v.edgePairs[189]);
+
      
         bigObj.position.set(0, 1, 0);
         // bigObj.renderDepth = 1e20;

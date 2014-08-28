@@ -214,6 +214,14 @@ engine.topdownCamera = (function() {
 	function moveTarget() {
 		if('l' in engine.userInput.pressed) return;
 
+		if(16 in engine.userInput.pressed) {
+			moveSensitivity = 0.01;
+			rotateSensitivity = 0.01;
+		} else {
+			moveSensitivity = 0.2;
+			rotateSensitivity = 0.05;
+		}
+
 		if(w in engine.userInput.pressed) {
 			target.position.z -= Math.cos(yaw.rotation.y) * moveSensitivity;
 			target.position.x -= Math.sin(yaw.rotation.y) * moveSensitivity;

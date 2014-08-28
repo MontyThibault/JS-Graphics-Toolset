@@ -1,5 +1,5 @@
 /* Created by Monty Thibault
-   Last updated Aug 27, 2014
+   Last updated Aug 28, 2014
    montythibault@gmail.com */
 
 
@@ -220,12 +220,12 @@ engine.initMaterials = function() {
 		var vertexShader = engine.shaders['darkness.vert'],
 			fragmentShader = engine.shaders['darkness.frag'];
 
+		// TODO find replaceALL
 		fragmentShader = fragmentShader
 			.replace('<uVOVertsLength>', vo.vertices.length)
-			.replace('<uVOEdgesLength>', vo.edges.length);
-
-		console.log
-
+			.replace('<uVOEdgesLength>', vo.edgePairs.length)
+			.replace('<uVOEdgesLength>', vo.edgePairs.length)
+			.replace('<uVOEdgesLength>', vo.edgePairs.length);
 
 		var mat = new THREE.ShaderMaterial({
 			lights: true,
@@ -651,6 +651,14 @@ engine.topdownCamera = (function() {
 
 	function moveTarget() {
 		if('l' in engine.userInput.pressed) return;
+
+		if(16 in engine.userInput.pressed) {
+			moveSensitivity = 0.01;
+			rotateSensitivity = 0.01;
+		} else {
+			moveSensitivity = 0.2;
+			rotateSensitivity = 0.05;
+		}
 
 		if(w in engine.userInput.pressed) {
 			target.position.z -= Math.cos(yaw.rotation.y) * moveSensitivity;
@@ -1698,16 +1706,34 @@ engine.map = (function() {
 
         var bigObj = new THREE.Object3D(),  
             geo, line;
-        for(var i = 0; i < v.edges.length; i++) {
-            for(var j = 0; j < v.edges[i].length; j++) {
+        // for(var i = 0; i < v.edges.length; i++) {
+        //     for(var j = 0; j < v.edges[i].length; j++) {
 
-                geo = new THREE.Geometry();
-                geo.vertices.push(v.vertices[i], v.vertices[v.edges[i][j]]);
+        //    
+
+        //         console.log(v.vertices[i], v.vertices[v.edges[i][j]]);
+
+        //         geo = new THREE.Geometry();
+        //         geo.vertices.push(v.vertices[i], v.vertices[v.edges[i][j]]);
                 
-                line = new THREE.Line(geo, material);
-                bigObj.add(line);
-            }
+        //         line = new THREE.Line(geo, material);
+        //         bigObj.add(line);
+        //     }
+        // }
+
+        for(var i = 0; i < v.edgePairs.length; i += 2) {
+            //if(i === 188) continue;
+
+             geo = new THREE.Geometry();
+            geo.vertices.push(v.vertices[v.edgePairs[i]], 
+                              v.vertices[v.edgePairs[i + 1]]);
+                
+            line = new THREE.Line(geo, material);
+            bigObj.add(line);
         }
+
+        console.log(v.edgePairs[188], v.edgePairs[189]);
+
      
         bigObj.position.set(0, 1, 0);
         // bigObj.renderDepth = 1e20;
@@ -1763,6 +1789,8 @@ engine.player = (function() {
 			$('#loader').fadeOut();
 
 			scene.add(mesh);
+
+			loaded = true;
 		});
 	});
 
@@ -1773,11 +1801,19 @@ engine.player = (function() {
 	window.scene = scene;
 
 
+	var loaded = false;
 	(function frame() {
+		if(loaded) {
+			engine.map.material.uniforms.uPlayerPosition.value.copy(engine.player.position);
+		}
 		engine.topdownCamera.update();
 		engine.display.render(scene, engine.topdownCamera.cam);
 
 		if(engine.fps === 60) {
+
+			// counter++;
+			// if(counter === 0) return;
+
             window.requestAnimationFrame(frame);
 		} else if(engine.fps === 0) {
 			window.setZeroTimeout(frame); // MAXIMUM PERFORMANCE
