@@ -159,10 +159,12 @@ engine.shaders = (function() {
 		$path = $('#path');
 
 	function load(callback) {
-		var file = files.shift();
+		var file = files.shift(),
+			t = new Date().getTime();
+			
 		$path.text('shaders/' + file);
 
-		$.get('shaders/' + file, function(text) {
+		$.get('shaders/' + file + '?t=' + t, function(text) {
 			shaders[file] = text;
 
 			if(files.length) {
@@ -189,16 +191,46 @@ engine.initMaterials = function() {
 
 	engine.materials.darkness = function(config) {
 
+		var vo = engine.map.viewOcclusion;
+
 		var uniforms = THREE.UniformsUtils.merge([
 			THREE.UniformsLib.common,
-			THREE.UniformsLib.lights
+			THREE.UniformsLib.lights,
+			{
+				'uPlayerPosition': {
+					type: 'v3',
+					value: engine.player.position
+				},
+
+				'uVOVerts': {
+					type: 'v3v',
+					value: vo.vertices
+				},
+
+				'uVOEdges': {
+					type: 'iv1',
+					value: vo.edgePairs
+				}
+			}
 		]);
 
 		uniforms.map.value = config.map;
+
+
+		var vertexShader = engine.shaders['darkness.vert'],
+			fragmentShader = engine.shaders['darkness.frag'];
+
+		fragmentShader = fragmentShader
+			.replace('<uVOVertsLength>', vo.vertices.length)
+			.replace('<uVOEdgesLength>', vo.edges.length);
+
+		console.log
+
+
 		var mat = new THREE.ShaderMaterial({
 			lights: true,
-			vertexShader: engine.shaders['darkness.vert'],
-			fragmentShader: engine.shaders['darkness.frag'],
+			vertexShader: vertexShader,
+			fragmentShader: fragmentShader,
 			uniforms: uniforms
 		});
 
@@ -1581,8 +1613,26 @@ THREE.JSONLoader.prototype.parse = function(json, texturePath) {
     geo.viewOcclusion = oldParse(json.viewOcclusion, texturePath).geometry;
     geo.viewOcclusion.edges = json.viewOcclusion.edges;
 
+    geo.viewOcclusion.edgePairs = parseEdges(json.viewOcclusion.edges);
+
     return obj;
 };
+
+// viewOcclusion.edges are the edges exactly as defined in map.js
+
+// Generates viewOcclusion.edgePairs, which collapse into an array of ints
+// [Edge1A, Edge1B, Edge2A, Edge2B, ... ] that can be fed into a shader
+function parseEdges(edges) {
+    var edgePairs = [];
+
+    for(var i = 0; i < edges.length; i++) {
+        for(var j = 0; j < edges[i].length; j++) {
+            edgePairs.push(i, edges[i][j]);
+        }
+    }
+
+    return edgePairs;
+}
 
 
 engine.map = (function() {
@@ -1598,14 +1648,19 @@ engine.map = (function() {
     exports = {
     	material: null,
     	mesh: null,
-    	load: load,
+        viewOcclusion: null,
+    	load: load
     };
 
 
     function load(callback) {
-    	var loader = new THREE.JSONLoader();
+    	var loader = new THREE.JSONLoader(),
+            t = new Date().getTime();
+
         $path.text('assets/samplemap/map.js');
 	    loader.load('assets/samplemap/map.js', function (geometry) {
+
+            exports.viewOcclusion = geometry.viewOcclusion;
 
             $path.text('assets/samplemap/Colormap.png');
 	    	THREE.ImageUtils.loadTexture('assets/samplemap/Colormap.png', 
@@ -1655,7 +1710,6 @@ engine.map = (function() {
         }
      
         bigObj.position.set(0, 1, 0);
-        // bigObj.scale.set(1.1, 1.1, 1.1); // This is bizarre
         // bigObj.renderDepth = 1e20;
 
         return bigObj;

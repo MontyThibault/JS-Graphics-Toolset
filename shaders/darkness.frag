@@ -2,7 +2,15 @@ uniform vec3 diffuse;
 uniform float opacity;
 
 /////////////
+uniform vec3 uPlayerPosition;
+
+// These are template variables. They are replaced before the shader is compiled with the correct number of verts/edges in the geometry.
+// See materials.js
+uniform vec3 uVOVerts[ <uVOVertsLength> ];
+uniform int uVOEdges[ <uVOEdgesLength> ];
+
 varying vec3 vLightFront;
+varying vec4 vWorldPosition;
 
 
 #ifdef USE_COLOR
@@ -146,6 +154,8 @@ void main() {
 // not_vLightFront = min(not_vLightFront, 1.0);
 
 // gl_FragColor.xyz *= not_vLightFront;
+
+
 
 
 

@@ -1,5 +1,9 @@
 #define LAMBERT
 varying vec3 vLightFront;
+
+/////////////////////////////
+varying vec4 vWorldPosition;
+
 #ifdef DOUBLE_SIDED
 	varying vec3 vLightBack;
 #endif
@@ -343,6 +347,11 @@ gl_Position = projectionMatrix * mvPosition;
 	#endif
 
 #endif
+
+///////////////////////////////
+vWorldPosition = worldPosition;
+
+
 #if defined( USE_ENVMAP ) && ! defined( USE_BUMPMAP ) && ! defined( USE_NORMALMAP )
 
 	vec3 worldNormal = mat3( modelMatrix[ 0 ].xyz, modelMatrix[ 1 ].xyz, modelMatrix[ 2 ].xyz ) * objectNormal;

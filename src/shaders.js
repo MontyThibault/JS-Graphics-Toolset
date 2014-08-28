@@ -7,10 +7,12 @@ engine.shaders = (function() {
 		$path = $('#path');
 
 	function load(callback) {
-		var file = files.shift();
+		var file = files.shift(),
+			t = new Date().getTime();
+			
 		$path.text('shaders/' + file);
 
-		$.get('shaders/' + file, function(text) {
+		$.get('shaders/' + file + '?t=' + t, function(text) {
 			shaders[file] = text;
 
 			if(files.length) {
