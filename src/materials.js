@@ -29,22 +29,20 @@ engine.initMaterials = function() {
 
 		uniforms.map.value = config.map;
 
+		var defines = {
+			'uVOVertsLength': vo.vertices.length,
+			'uVOEdgesLength': vo.edgePairs.length
+		};
 
 		var vertexShader = engine.shaders['darkness.vert'],
 			fragmentShader = engine.shaders['darkness.frag'];
-
-		// TODO find replaceALL
-		fragmentShader = fragmentShader
-			.replace('<uVOVertsLength>', vo.vertices.length)
-			.replace('<uVOEdgesLength>', vo.edgePairs.length)
-			.replace('<uVOEdgesLength>', vo.edgePairs.length)
-			.replace('<uVOEdgesLength>', vo.edgePairs.length);
 
 		var mat = new THREE.ShaderMaterial({
 			lights: true,
 			vertexShader: vertexShader,
 			fragmentShader: fragmentShader,
-			uniforms: uniforms
+			uniforms: uniforms,
+			defines: defines
 		});
 
 		mat.map = config.map;

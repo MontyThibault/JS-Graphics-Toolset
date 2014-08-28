@@ -4,10 +4,9 @@ uniform float opacity;
 /////////////
 uniform vec3 uPlayerPosition;
 
-// These are template variables. They are replaced before the shader is compiled with the correct number of verts/edges in the geometry.
-// See materials.js
-uniform vec3 uVOVerts[ <uVOVertsLength> ];
-uniform int uVOEdges[ <uVOEdgesLength> ];
+// These are constants added by a define block. See material.js.
+uniform vec3 uVOVerts[ uVOVertsLength ];
+uniform int uVOEdges[ uVOEdgesLength ];
 
 varying vec3 vLightFront;
 varying vec4 vWorldPosition;
@@ -121,12 +120,15 @@ varying vec4 vWorldPosition;
 vec2 intersectPoint(vec2 a, vec2 b, vec2 c, vec2 d) {
 	float slope1, slope2, c1, c2;
 
+	// Calculate slopes of both lines
 	slope1 = (b.y - a.y) / (b.x - a.x);
 	slope2 = (d.y - c.y) / (d.x - c.x);
 
+	// Calculate y-intercepts of both lines
 	c1 = a.y - (a.x * slope1);
 	c2 = c.y - (c.x * slope2);
 
+	// (m1x + y1 = m2x + y2) boils down to (x = (y2 - y1) / (m1 - m2))
 	float ix = (c2 - c1) / (slope1 - slope2),
 		  iy = (ix * slope1) + c1;
 
@@ -134,6 +136,9 @@ vec2 intersectPoint(vec2 a, vec2 b, vec2 c, vec2 d) {
 }
 
 bool onLine(vec2 point, vec2 a, vec2 b) {
+
+	// Make sure x is in the domain of both lines
+	// Checking just x should be enough
 	return (point.x < max(a.x, b.x)) && (point.x > min(a.x, b.x));
 }
 
@@ -144,6 +149,7 @@ bool intersect(vec2 a, vec2 b, vec2 c, vec2 d) {
 }
 
 bool withinRadius(vec2 a, vec2 b, float radius) {
+	// deltaX^2 + deltaY^2 < r^2 
 	return ((b.x - a.x) * (b.x - a.x)) + ((b.y - a.y) * (b.y - a.y)) < (radius * radius);
 }
 
@@ -210,7 +216,7 @@ varying vec4 vWorldPosition;
 int edgeA, edgeB;
 vec3 vertA, vertB;
 
-for(int i = 0; i < <uVOEdgesLength>; i += 2) {
+for(int i = 0; i < uVOEdgesLength; i += 2) {
 	edgeA = uVOEdges[i];
 	edgeB = uVOEdges[i + 1];
 
@@ -224,10 +230,11 @@ for(int i = 0; i < <uVOEdgesLength>; i += 2) {
 		}
 	}
 
+	// Disable for slowness
 
-	if(intersect(vertA.xz, vertB.xz, uPlayerPosition.xz, vWorldPosition.xz)) {
-		gl_FragColor *= 0.0;
-	}
+	// if(intersect(vertA.xz, vertB.xz, uPlayerPosition.xz, vWorldPosition.xz)) {
+	// 	gl_FragColor *= 0.0;
+	// }
 }
 
 // if(intersect(uVOVerts[52].xz, uVOVerts[51].xz, uPlayerPosition.xz, vWorldPosition.xz)) {

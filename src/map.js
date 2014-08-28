@@ -119,7 +119,7 @@ engine.map = (function() {
             bigObj.add(line);
         }
 
-        console.log(v.edgePairs[188], v.edgePairs[189]);
+        console.log(vo.vertices.length);
 
      
         bigObj.position.set(0, 1, 0);

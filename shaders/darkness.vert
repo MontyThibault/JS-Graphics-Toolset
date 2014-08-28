@@ -3,6 +3,7 @@ varying vec3 vLightFront;
 
 /////////////////////////////
 varying vec4 vWorldPosition;
+varying float vOccluded;
 
 #ifdef DOUBLE_SIDED
 	varying vec3 vLightBack;
@@ -157,6 +158,45 @@ uniform vec3 ambientLightColor;
 	uniform float logDepthBufFC;
 
 #endif
+
+////////////////////////
+
+// Hope to Jesus that no lines are perfectly parallel or have verticies 
+// exactly on the origin
+vec2 intersectPoint(vec2 a, vec2 b, vec2 c, vec2 d) {
+	float slope1, slope2, c1, c2;
+
+	// Calculate slopes of both lines
+	slope1 = (b.y - a.y) / (b.x - a.x);
+	slope2 = (d.y - c.y) / (d.x - c.x);
+
+	// Calculate y-intercepts of both lines
+	c1 = a.y - (a.x * slope1);
+	c2 = c.y - (c.x * slope2);
+
+	// (m1x + y1 = m2x + y2) boils down to (x = (y2 - y1) / (m1 - m2))
+	float ix = (c2 - c1) / (slope1 - slope2),
+		  iy = (ix * slope1) + c1;
+
+	return vec2(ix, iy);
+}
+
+bool onLine(vec2 point, vec2 a, vec2 b) {
+
+	// Make sure x is in the domain of both lines
+	// Checking just x should be enough
+	return (point.x < max(a.x, b.x)) && (point.x > min(a.x, b.x));
+}
+
+bool intersect(vec2 a, vec2 b, vec2 c, vec2 d) {
+	vec2 i = intersectPoint(a, b, c, d);
+
+	return onLine(i, a, b) && onLine(i, c, d);
+}
+
+////////////////////////
+
+
 void main() {
 #if defined( USE_MAP ) || defined( USE_BUMPMAP ) || defined( USE_NORMALMAP ) || defined( USE_SPECULARMAP ) || defined( USE_ALPHAMAP )
 
@@ -350,6 +390,7 @@ gl_Position = projectionMatrix * mvPosition;
 
 ///////////////////////////////
 vWorldPosition = worldPosition;
+
 
 
 #if defined( USE_ENVMAP ) && ! defined( USE_BUMPMAP ) && ! defined( USE_NORMALMAP )
