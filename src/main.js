@@ -25,10 +25,10 @@
 	scene.add(engine.player);
 
 	window.scene = scene;
-
-
 	var loaded = false;
 	(function frame() {
+		window.frame = frame;
+
 		if(loaded) {
 			engine.map.material.uniforms.uPlayerPosition.value.copy(engine.player.position);
 		}
@@ -36,10 +36,6 @@
 		engine.display.render(scene, engine.topdownCamera.cam);
 
 		if(engine.fps === 60) {
-
-			// counter++;
-			// if(counter === 0) return;
-
             window.requestAnimationFrame(frame);
 		} else if(engine.fps === 0) {
 			window.setZeroTimeout(frame); // MAXIMUM PERFORMANCE

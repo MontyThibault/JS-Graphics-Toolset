@@ -207,54 +207,48 @@ varying vec4 vWorldPosition;
 */
 
 
-// int edgeA, edgeB;
-// vec3 vertA, vertB;
+int edgeA, edgeB;
+vec3 vertA, vertB;
 
-// for(int i = 0; i < <uVOEdgesLength>; i += 2) {
-// 	edgeA = uVOEdges[i];
-// 	edgeB = uVOEdges[i + 1];
+for(int i = 0; i < <uVOEdgesLength>; i += 2) {
+	edgeA = uVOEdges[i];
+	edgeB = uVOEdges[i + 1];
 
-// 	for(int j = 0; j < 200; j++) {
-// 		if(j == edgeA) {
-// 			vertA = uVOVerts[j];
-// 		}
+	for(int j = 0; j < 200; j++) {
+		if(j == edgeA) {
+			vertA = uVOVerts[j];
+		}
 
-// 		if(j == edgeB) {
-// 			vertB = uVOVerts[j];
-// 		}
-// 	}
+		if(j == edgeB) {
+			vertB = uVOVerts[j];
+		}
+	}
 
 
-// 	if(intersect(vertA.xz, vertB.xz, uPlayerPosition.xz, vWorldPosition.xz)) {
-// 		gl_FragColor *= 0.0;
-// 	}
-// }
+	if(intersect(vertA.xz, vertB.xz, uPlayerPosition.xz, vWorldPosition.xz)) {
+		gl_FragColor *= 0.0;
+	}
+}
 
 // if(intersect(uVOVerts[52].xz, uVOVerts[51].xz, uPlayerPosition.xz, vWorldPosition.xz)) {
 // 	gl_FragColor *= 0.2;
 // }
 
-if(withinRadius(vWorldPosition.xz, uVOVerts[51].xz, 0.5)) {
-	gl_FragColor *= 0.5;
-}
+// if(withinRadius(vWorldPosition.xz, uVOVerts[51].xz, 0.5)) {
+// 	gl_FragColor *= 0.5;
+// }
 
-if(withinRadius(vWorldPosition.xz, uVOVerts[52].xz, 0.5)) {
-	gl_FragColor *= 0.2;
-}
+// if(withinRadius(vWorldPosition.xz, uVOVerts[52].xz, 0.5)) {
+// 	gl_FragColor *= 0.2;
+// }
 
-if(withinRadius(vWorldPosition.xz, uPlayerPosition.xz, 0.5)) {
-	gl_FragColor *= 0.2;
-}
+// if(withinRadius(vWorldPosition.xz, uPlayerPosition.xz, 0.5)) {
+// 	gl_FragColor *= 0.2;
+// }
 
-if(withinRadius(vWorldPosition.xz, vec2(5.0, 5.0), 0.5)) {
-	gl_FragColor *= 0.2;
-}
-
-vec2 i = intersectPoint(uVOVerts[52].xz, uVOVerts[51].xz, vec2(5.0, 5.0), uPlayerPosition.xz);
-if(withinRadius(vWorldPosition.xz, i, 0.1)) {
-	gl_FragColor *= 0.2;
-}
-
+// if(withinRadius(vWorldPosition.xz, vec2(5.0, 5.0), 0.5)) {
+// 	gl_FragColor *= 0.2;
+// }
 
 
 float specularStrength;

@@ -1682,13 +1682,13 @@ engine.map = (function() {
 	    			map: texture
 	    		});
 
-                var lines = drawLines(geometry.viewOcclusion);
+                // var lines = drawLines(geometry.viewOcclusion);
 
 	    		exports.mesh = new THREE.Mesh(geometry, exports.material);
 
 	    		//callback(exports.mesh);
                 var obj = new THREE.Object3D();
-                obj.add(lines);
+                // obj.add(lines);
                 obj.add(exports.mesh);
                 callback(obj);
             });
@@ -1799,10 +1799,10 @@ engine.player = (function() {
 	scene.add(engine.player);
 
 	window.scene = scene;
-
-
 	var loaded = false;
 	(function frame() {
+		window.frame = frame;
+
 		if(loaded) {
 			engine.map.material.uniforms.uPlayerPosition.value.copy(engine.player.position);
 		}
@@ -1810,10 +1810,6 @@ engine.player = (function() {
 		engine.display.render(scene, engine.topdownCamera.cam);
 
 		if(engine.fps === 60) {
-
-			// counter++;
-			// if(counter === 0) return;
-
             window.requestAnimationFrame(frame);
 		} else if(engine.fps === 0) {
 			window.setZeroTimeout(frame); // MAXIMUM PERFORMANCE
