@@ -1680,13 +1680,13 @@ engine.map = (function() {
 	    			map: texture
 	    		});
 
-                // var lines = drawLines(geometry.viewOcclusion);
+                var lines = drawLines(geometry.viewOcclusion);
 
 	    		exports.mesh = new THREE.Mesh(geometry, exports.material);
 
 	    		//callback(exports.mesh);
                 var obj = new THREE.Object3D();
-                // obj.add(lines);
+                obj.add(lines);
                 obj.add(exports.mesh);
                 callback(obj);
             });
@@ -1729,8 +1729,6 @@ engine.map = (function() {
             line = new THREE.Line(geo, material);
             bigObj.add(line);
         }
-
-        console.log(vo.vertices.length);
 
      
         bigObj.position.set(0, 1, 0);
