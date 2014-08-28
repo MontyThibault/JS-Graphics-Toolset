@@ -112,6 +112,39 @@ varying vec4 vWorldPosition;
 	#endif
 
 #endif
+
+
+////////////////////////
+
+// Hope to Jesus that no lines are perfectly parallel or have verticies 
+// exactly on the origin
+vec2 intersectPoint(vec2 a, vec2 b, vec2 c, vec2 d) {
+	float slope1, slope2, c1, c2;
+
+	slope1 = (b.x - a.x) / (b.y - a.y);
+	slope2 = (d.x - c.x) / (d.y - c.y);
+
+	c1 = a.y - (a.x * slope1);
+	c2 = c.y - (c.x * slope2);
+
+	float ix = (c2 - c1) / (slope1 - slope2),
+		  iy = (ix * slope1) + c1;
+
+	return vec2(ix, iy);
+}
+
+bool onLine(vec2 point, vec2 a, vec2 b) {
+	return (point.x < max(a.x, b.x)) && (point.x > min(a.x, b.x));
+}
+
+bool intersect(vec2 a, vec2 b, vec2 c, vec2 d) {
+	vec2 i = intersectPoint(a, b, c, d);
+
+	return onLine(i, a, b) && onLine(i, c, d);
+}
+
+////////////////////////
+
 void main() {
 	gl_FragColor = vec4( diffuse, opacity );
 #if defined(USE_LOGDEPTHBUF) && defined(USE_LOGDEPTHBUF_EXT)
@@ -155,7 +188,29 @@ void main() {
 
 // gl_FragColor.xyz *= not_vLightFront;
 
+/*
 
+uniform vec3 uPlayerPosition;
+
+// These are template variables. They are replaced before the shader is compiled with the correct number of verts/edges in the geometry.
+// See materials.js
+uniform vec3 uVOVerts[ <uVOVertsLength> ];
+uniform int uVOEdges[ <uVOEdgesLength> ];
+
+varying vec3 vLightFront;
+varying vec4 vWorldPosition;
+
+*/
+vec3 vert1, vert2;
+
+for(int i = 0; i < length(uVOEdges); i += 2) {
+	vert1 = uVOVerts[uVOEdges[i]];
+	vert2 = uVOVerts[uVOEdges[i + 1]];
+
+	// if(intersect(vert1.xz, vert2.xz, uPlayerPosition.xz, vWorldPosition.wy)) {
+	// 	gl_FragColor *= 0.0;
+	// }
+}
 
 
 
