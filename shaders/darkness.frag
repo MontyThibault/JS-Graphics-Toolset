@@ -121,8 +121,8 @@ varying vec4 vWorldPosition;
 vec2 intersectPoint(vec2 a, vec2 b, vec2 c, vec2 d) {
 	float slope1, slope2, c1, c2;
 
-	slope1 = (b.x - a.x) / (b.y - a.y);
-	slope2 = (d.x - c.x) / (d.y - c.y);
+	slope1 = (b.y - a.y) / (b.x - a.x);
+	slope2 = (d.y - c.y) / (d.x - c.x);
 
 	c1 = a.y - (a.x * slope1);
 	c2 = c.y - (c.x * slope2);
@@ -235,12 +235,26 @@ varying vec4 vWorldPosition;
 // }
 
 if(withinRadius(vWorldPosition.xz, uVOVerts[51].xz, 0.5)) {
-	gl_FragColor *= 0.2;
+	gl_FragColor *= 0.5;
 }
 
 if(withinRadius(vWorldPosition.xz, uVOVerts[52].xz, 0.5)) {
 	gl_FragColor *= 0.2;
 }
+
+if(withinRadius(vWorldPosition.xz, uPlayerPosition.xz, 0.5)) {
+	gl_FragColor *= 0.2;
+}
+
+if(withinRadius(vWorldPosition.xz, vec2(5.0, 5.0), 0.5)) {
+	gl_FragColor *= 0.2;
+}
+
+vec2 i = intersectPoint(uVOVerts[52].xz, uVOVerts[51].xz, vec2(5.0, 5.0), uPlayerPosition.xz);
+if(withinRadius(vWorldPosition.xz, i, 0.1)) {
+	gl_FragColor *= 0.2;
+}
+
 
 
 float specularStrength;
