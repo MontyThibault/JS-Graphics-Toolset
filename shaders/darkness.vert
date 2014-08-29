@@ -407,6 +407,7 @@ vec3 vertA, vertB;
 vec2 point;
 
 vOccluded = 0.0;
+vIntersectPoint = worldPosition.xz;
 
 for(int i = 0; i < uVOEdgesLength; i += 2) {
 

@@ -262,13 +262,13 @@ varying vec4 vWorldPosition;
 // Disable lighting effects for now 
 
 
-
+// bool shadowed = false;
 // if(vOccluded > 0.0 && vOccluded < 1.0) {
 // 	int edgeA, edgeB;
 // 	vec3 vertA, vertB;
 // 	vec2 point;
 
-// 	bool shadowed = false;
+	
 
 // 	for(int i = 0; i < uVOEdgesLength; i += 2) {
 
@@ -312,24 +312,29 @@ varying vec4 vWorldPosition;
 // 			// break;
 // 		}
 // 	}
-// } else {
-	 
+// } else if(vOccluded == 1.0) {
+// 	gl_FragColor.xyz *= 0.0;
 // }
 
 if(vOccluded != 0.0) {
-	float brightness = (distance(vWorldPosition.xz, vIntersectPoint) * -0.5) + 1.0;
+
+
+
+	float brightness = (distance(vWorldPosition.xz, vIntersectPoint) * -0.7) + 1.0;
 
 	gl_FragColor *= max(0.0, min(1.0, brightness));
+
+	
+
 }
 
-//if(!shadowed) {
-	vec3 not_vLightFront = vLightFront - 0.9; 
-	not_vLightFront = not_vLightFront * 3.0;
-	not_vLightFront = min(not_vLightFront, 1.0);
-	not_vLightFront = max(not_vLightFront, 0.5);
 
-	gl_FragColor.xyz *= not_vLightFront;
-// }
+// vec3 not_vLightFront = vLightFront - 0.9; 
+// not_vLightFront = not_vLightFront * 3.0;
+// not_vLightFront = min(not_vLightFront, 1.0);
+// not_vLightFront = max(not_vLightFront, 0.5);
+
+// gl_FragColor.xyz *= not_vLightFront;
 
 // if(intersect(uVOVerts[52].xz, uVOVerts[51].xz, uPlayerPosition.xz, vWorldPosition.xz)) {
 // 	gl_FragColor *= 0.2;
