@@ -35,6 +35,8 @@
 		engine.topdownCamera.update();
 		engine.display.render(scene, engine.topdownCamera.cam);
 
+		//if(loaded) return;
+
 		if(engine.fps === 60) {
             window.requestAnimationFrame(frame);
 		} else if(engine.fps === 0) {

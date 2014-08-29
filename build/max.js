@@ -1664,7 +1664,7 @@ engine.map = (function() {
             t = new Date().getTime();
 
         $path.text('assets/samplemap/map.js');
-	    loader.load('assets/samplemap/map.js', function (geometry) {
+	    loader.load('assets/samplemap/map.js?t=' + t, function (geometry) {
 
             exports.viewOcclusion = geometry.viewOcclusion;
 
@@ -1686,7 +1686,7 @@ engine.map = (function() {
 
 	    		//callback(exports.mesh);
                 var obj = new THREE.Object3D();
-                obj.add(lines);
+                // obj.add(lines);
                 obj.add(exports.mesh);
                 callback(obj);
             });
@@ -1804,6 +1804,8 @@ engine.player = (function() {
 		}
 		engine.topdownCamera.update();
 		engine.display.render(scene, engine.topdownCamera.cam);
+
+		//if(loaded) return;
 
 		if(engine.fps === 60) {
             window.requestAnimationFrame(frame);

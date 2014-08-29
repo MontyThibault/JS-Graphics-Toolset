@@ -190,14 +190,6 @@ void main() {
 
 /////////////////////
 
-// Disable lighting effects for now 
-
-// vec3 not_vLightFront = vLightFront - 0.9; 
-// not_vLightFront = not_vLightFront * 3.0;
-// not_vLightFront = min(not_vLightFront, 1.0);
-
-// gl_FragColor.xyz *= not_vLightFront;
-
 /*
 
 uniform vec3 uPlayerPosition;
@@ -215,27 +207,60 @@ varying vec4 vWorldPosition;
 
 int edgeA, edgeB;
 vec3 vertA, vertB;
+vec2 point;
+
+bool shadowed = false;
 
 for(int i = 0; i < uVOEdgesLength; i += 2) {
+
+	// vertA = uVOVerts[uVOEdges[i]];
+	// vertB = uVOVerts[uVOEdges[i + 1]];
+
 	edgeA = uVOEdges[i];
 	edgeB = uVOEdges[i + 1];
 
-	for(int j = 0; j < 200; j++) {
+	bool halfWay = false;
+	for(int j = 0; j <uVOVertsLength; j++) {
 		if(j == edgeA) {
 			vertA = uVOVerts[j];
+			if(halfWay) {
+				break;
+			} else {
+				halfWay = true;
+			}
 		}
 
 		if(j == edgeB) {
 			vertB = uVOVerts[j];
+			if(halfWay) {
+				break;
+			} else {
+				halfWay = true;
+			}
 		}
 	}
 
-	// Disable for slowness
+	//Disable for slowness
 
-	// if(intersect(vertA.xz, vertB.xz, uPlayerPosition.xz, vWorldPosition.xz)) {
-	// 	gl_FragColor *= 0.0;
-	// }
+	point = intersectPoint(vertA.xz, vertB.xz, uPlayerPosition.xz, vWorldPosition.xz);
+	if(onLine(point, vertA.xz, vertB.xz) && onLine(point, uPlayerPosition.xz, vWorldPosition.xz)) {
+
+		gl_FragColor *= max(0.0, min(1.0, (distance(vWorldPosition.xz, point) * -0.5) + 1.0));
+		shadowed = true;
+		// break;
+	}
 }
+
+// Disable lighting effects for now 
+
+//if(!shadowed) {
+	vec3 not_vLightFront = vLightFront - 0.9; 
+	not_vLightFront = not_vLightFront * 3.0;
+	not_vLightFront = min(not_vLightFront, 1.0);
+	not_vLightFront = max(not_vLightFront, 0.5);
+
+	gl_FragColor.xyz *= not_vLightFront;
+// }
 
 // if(intersect(uVOVerts[52].xz, uVOVerts[51].xz, uPlayerPosition.xz, vWorldPosition.xz)) {
 // 	gl_FragColor *= 0.2;
