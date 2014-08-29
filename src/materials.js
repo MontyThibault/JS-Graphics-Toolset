@@ -23,6 +23,12 @@ engine.initMaterials = function() {
 				'uVOEdges': {
 					type: 'iv1',
 					value: vo.edgePairs
+				},
+
+				'uVOTexture': {
+					type: 't',
+					value: 1,
+					texture: vo.dataTexture
 				}
 			}
 		]);

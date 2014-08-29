@@ -8,6 +8,11 @@ uniform vec3 uPlayerPosition;
 uniform vec3 uVOVerts[ uVOVertsLength ];
 uniform int uVOEdges[ uVOEdgesLength ];
 
+uniform sampler2D uVOTexture;
+
+varying float vOccluded;
+varying vec2 vIntersectPoint;
+
 varying vec3 vLightFront;
 varying vec4 vWorldPosition;
 
@@ -205,53 +210,117 @@ varying vec4 vWorldPosition;
 */
 
 
-int edgeA, edgeB;
-vec3 vertA, vertB;
-vec2 point;
+// int edgeA, edgeB;
+// vec3 vertA, vertB;
+// vec2 point;
 
-bool shadowed = false;
+// bool shadowed = false;
 
-for(int i = 0; i < uVOEdgesLength; i += 2) {
+// for(int i = 0; i < uVOEdgesLength; i += 2) {
 
-	// vertA = uVOVerts[uVOEdges[i]];
-	// vertB = uVOVerts[uVOEdges[i + 1]];
+// 	// vertA = uVOVerts[uVOEdges[i]];
+// 	// vertB = uVOVerts[uVOEdges[i + 1]];
 
-	edgeA = uVOEdges[i];
-	edgeB = uVOEdges[i + 1];
+// 	// sampler2D(uVOTexture, vec2(i, 0.0));
 
-	bool halfWay = false;
-	for(int j = 0; j <uVOVertsLength; j++) {
-		if(j == edgeA) {
-			vertA = uVOVerts[j];
-			if(halfWay) {
-				break;
-			} else {
-				halfWay = true;
-			}
-		}
+// 	//edgeA = texture2D(uVOTexture, vec2(i, 0.0));
+// 	edgeA = uVOEdges[i];
+// 	edgeB = uVOEdges[i + 1];
 
-		if(j == edgeB) {
-			vertB = uVOVerts[j];
-			if(halfWay) {
-				break;
-			} else {
-				halfWay = true;
-			}
-		}
-	}
+// 	bool halfWay = false;
+// 	for(int j = 0; j <uVOVertsLength; j++) {
+// 		if(j == edgeA) {
+// 			vertA = uVOVerts[j];
+// 			if(halfWay) {
+// 				break;
+// 			} else {
+// 				halfWay = true;
+// 			}
+// 		}
 
-	//Disable for slowness
+// 		if(j == edgeB) {
+// 			vertB = uVOVerts[j];
+// 			if(halfWay) {
+// 				break;
+// 			} else {
+// 				halfWay = true;
+// 			}
+// 		}
+// 	}
 
-	point = intersectPoint(vertA.xz, vertB.xz, uPlayerPosition.xz, vWorldPosition.xz);
-	if(onLine(point, vertA.xz, vertB.xz) && onLine(point, uPlayerPosition.xz, vWorldPosition.xz)) {
+// 	//Disable for slowness
 
-		gl_FragColor *= max(0.0, min(1.0, (distance(vWorldPosition.xz, point) * -0.5) + 1.0));
-		shadowed = true;
-		// break;
-	}
-}
+// 	point = intersectPoint(vertA.xz, vertB.xz, uPlayerPosition.xz, vWorldPosition.xz);
+// 	if(onLine(point, vertA.xz, vertB.xz) && onLine(point, uPlayerPosition.xz, vWorldPosition.xz)) {
+
+// 		gl_FragColor *= max(0.0, min(1.0, (distance(vWorldPosition.xz, point) * -0.5) + 1.0));
+// 		shadowed = true;
+// 		// break;
+// 	}
+// }
 
 // Disable lighting effects for now 
+
+
+
+// if(vOccluded > 0.0 && vOccluded < 1.0) {
+// 	int edgeA, edgeB;
+// 	vec3 vertA, vertB;
+// 	vec2 point;
+
+// 	bool shadowed = false;
+
+// 	for(int i = 0; i < uVOEdgesLength; i += 2) {
+
+// 		// vertA = uVOVerts[uVOEdges[i]];
+// 		// vertB = uVOVerts[uVOEdges[i + 1]];
+
+// 		// sampler2D(uVOTexture, vec2(i, 0.0));
+
+// 		//edgeA = texture2D(uVOTexture, vec2(i, 0.0));
+// 		edgeA = uVOEdges[i];
+// 		edgeB = uVOEdges[i + 1];
+
+// 		bool halfWay = false;
+// 		for(int j = 0; j <uVOVertsLength; j++) {
+// 			if(j == edgeA) {
+// 				vertA = uVOVerts[j];
+// 				if(halfWay) {
+// 					break;
+// 				} else {
+// 					halfWay = true;
+// 				}
+// 			}
+
+// 			if(j == edgeB) {
+// 				vertB = uVOVerts[j];
+// 				if(halfWay) {
+// 					break;
+// 				} else {
+// 					halfWay = true;
+// 				}
+// 			}
+// 		}
+
+// 		//Disable for slowness
+
+// 		point = intersectPoint(vertA.xz, vertB.xz, uPlayerPosition.xz, vWorldPosition.xz);
+// 		if(onLine(point, vertA.xz, vertB.xz) && onLine(point, uPlayerPosition.xz, vWorldPosition.xz)) {
+
+// 			gl_FragColor *= max(0.0, min(1.0, (distance(vWorldPosition.xz, point) * -0.5) + 1.0));
+// 			shadowed = true;
+// 			// break;
+// 		}
+// 	}
+// } else {
+	 
+// }
+
+if(vOccluded != 0.0) {
+	float brightness = (distance(vWorldPosition.xz, vIntersectPoint) * -0.5) + 1.0;
+
+	gl_FragColor *= max(0.0, min(1.0, brightness));
+}
 
 //if(!shadowed) {
 	vec3 not_vLightFront = vLightFront - 0.9; 

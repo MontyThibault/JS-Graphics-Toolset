@@ -4,6 +4,16 @@ varying vec3 vLightFront;
 /////////////////////////////
 varying vec4 vWorldPosition;
 varying float vOccluded;
+varying vec2 vIntersectPoint;
+
+uniform vec3 uPlayerPosition;
+
+// These are constants added by a define block. See material.js.
+uniform vec3 uVOVerts[ uVOVertsLength ];
+uniform int uVOEdges[ uVOEdgesLength ];
+
+/////////////////////////
+
 
 #ifdef DOUBLE_SIDED
 	varying vec3 vLightBack;
@@ -390,6 +400,58 @@ gl_Position = projectionMatrix * mvPosition;
 
 ///////////////////////////////
 vWorldPosition = worldPosition;
+
+
+int edgeA, edgeB;
+vec3 vertA, vertB;
+vec2 point;
+
+vOccluded = 0.0;
+
+for(int i = 0; i < uVOEdgesLength; i += 2) {
+
+	// vertA = uVOVerts[uVOEdges[i]];
+	// vertB = uVOVerts[uVOEdges[i + 1]];
+
+	// sampler2D(uVOTexture, vec2(i, 0.0));
+
+	//edgeA = texture2D(uVOTexture, vec2(i, 0.0));
+	edgeA = uVOEdges[i];
+	edgeB = uVOEdges[i + 1];
+
+	bool halfWay = false;
+	for(int j = 0; j <uVOVertsLength; j++) {
+		if(j == edgeA) {
+			vertA = uVOVerts[j];
+			if(halfWay) {
+				break;
+			} else {
+				halfWay = true;
+			}
+		}
+
+		if(j == edgeB) {
+			vertB = uVOVerts[j];
+			if(halfWay) {
+				break;
+			} else {
+				halfWay = true;
+			}
+		}
+	}
+
+	//Disable for slowness
+
+	point = intersectPoint(vertA.xz, vertB.xz, uPlayerPosition.xz, worldPosition.xz);
+	if(onLine(point, vertA.xz, vertB.xz) && onLine(point, uPlayerPosition.xz, vWorldPosition.xz)) {
+
+		vOccluded = 1.0;
+		vIntersectPoint = point;
+		break;
+	}
+}
+
+///////////////////////////////////////
 
 
 

@@ -1,5 +1,5 @@
 /* Created by Monty Thibault
-   Last updated Aug 28, 2014
+   Last updated Aug 29, 2014
    montythibault@gmail.com */
 
 
@@ -210,6 +210,12 @@ engine.initMaterials = function() {
 				'uVOEdges': {
 					type: 'iv1',
 					value: vo.edgePairs
+				},
+
+				'uVOTexture': {
+					type: 't',
+					value: 1,
+					texture: vo.dataTexture
 				}
 			}
 		]);
@@ -1620,6 +1626,7 @@ THREE.JSONLoader.prototype.parse = function(json, texturePath) {
     geo.viewOcclusion.edges = json.viewOcclusion.edges;
 
     geo.viewOcclusion.edgePairs = parseEdges(json.viewOcclusion.edges);
+    geo.viewOcclusion.dataTexture = createDataTexture(geo.viewOcclusion);
 
     return obj;
 };
@@ -1638,6 +1645,28 @@ function parseEdges(edges) {
     }
 
     return edgePairs;
+}
+
+function createDataTexture(vo) {
+
+    // Vertices
+    var length = vo.vertices.length,
+        data = new Float32Array(length * 3);
+
+    for(var i = 0; i < length; i++) {
+        data[length * 3] = vo.vertices[i].x;
+        data[(length * 3) + 1] = vo.vertices[i].y;
+        data[(length * 3) + 2] = vo.vertices[i].z;
+    }
+
+    var edgeTexture = new THREE.DataTexture(
+        data, 
+        length, // width
+        1,  // height
+        THREE.RGBFormat, 
+        THREE.FloatType);
+
+    return edgeTexture;
 }
 
 
