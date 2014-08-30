@@ -31,6 +31,11 @@
 
 		if(loaded) {
 			engine.map.material.uniforms.uPlayerPosition.value.copy(engine.player.position);
+
+			// engine.map.viewOcclusion.edgePairs = engine.map.sortEdges(engine.player.position, engine.map.viewOcclusion);
+			// engine.map.material.uniforms.uVOEdges.value = engine.map.viewOcclusion.edgePairs;
+			// console.clear();
+			// console.log(engine.map.viewOcclusion.edgePairs);
 		}
 		engine.topdownCamera.update();
 		engine.display.render(scene, engine.topdownCamera.cam);

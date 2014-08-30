@@ -5,6 +5,10 @@ engine.context = function(func, context) {
 	};
 };
 
+engine.flatten = function(arr) {
+	return arr.concat.apply([], arr);
+};
+
 // Converts from normal screen space coordinates to relative coordinates, where
 // x's and y's range from -1 to 1 with (0, 0) being the exact center of the screen
 engine.relativeCoord = function(vec) {
