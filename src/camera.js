@@ -188,7 +188,7 @@ engine.topdownCamera = (function() {
 
 	// Here, the `target` object holds the ideal values for positioning/rotation/scale.
 	// moveTowardsTarget() will interpolate some percentage between the values
-	// Thus creating a nice smoothing effect, sort of like Zeno's paradox
+	// Thus creating a nice smoothing effect
 
 	var w = 'W'.charCodeAt(0),
 		s = 'S'.charCodeAt(0),
@@ -201,6 +201,8 @@ engine.topdownCamera = (function() {
 		moveSensitivity = 0.2,
 		rotateSensitivity = 0.05, 
 		smoothness = 0.1;
+
+	engine.target = target;
 
 	function update() {
 		moveTarget();

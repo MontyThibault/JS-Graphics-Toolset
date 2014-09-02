@@ -13,8 +13,13 @@ uniform sampler2D uVOTexture;
 varying float vOccluded;
 varying vec2 vIntersectPoint;
 
+varying float vEdgeA;
+varying float vEdgeB;
+
 varying vec3 vLightFront;
 varying vec4 vWorldPosition;
+
+/////////////
 
 
 #ifdef USE_COLOR
@@ -120,7 +125,7 @@ varying vec4 vWorldPosition;
 
 ////////////////////////
 
-// Hope to Jesus that no lines are perfectly parallel or have verticies 
+// Hope to Jesus that no lines are perfectly parallel or have vertices 
 // exactly on the origin
 vec2 intersectPoint(vec2 a, vec2 b, vec2 c, vec2 d) {
 	float slope1, slope2, c1, c2;
@@ -148,15 +153,36 @@ bool onLine(vec2 point, vec2 a, vec2 b) {
 }
 
 bool intersect(vec2 a, vec2 b, vec2 c, vec2 d) {
-	vec2 i = intersectPoint(a, b, c, d);
+	vec2 p = intersectPoint(a, b, c, d);
 
-	return onLine(i, a, b) && onLine(i, c, d);
+	return onLine(p, a, b) && onLine(p, c, d);
 }
 
 bool withinRadius(vec2 a, vec2 b, float radius) {
 	// deltaX^2 + deltaY^2 < r^2 
 	return ((b.x - a.x) * (b.x - a.x)) + ((b.y - a.y) * (b.y - a.y)) < (radius * radius);
 }
+
+// Overcomplicated way to do vVOVerts[i]
+vec3 vertexIndex(int i) {
+
+	for(int j = 0; j <uVOVertsLength; j++) {
+		if(j == i) {
+			return uVOVerts[j];
+		}
+	}
+}
+
+int edgeIndex(int i) {
+
+	for(int j = 0; j <uVOEdgesLength; j++) {
+		if(j == i) {
+			return uVOEdges[j];
+		}
+	}
+}
+
+
 
 ////////////////////////
 
@@ -318,23 +344,38 @@ varying vec4 vWorldPosition;
 
 if(vOccluded != 0.0) {
 
+	// On a face with a combination of shaded and unshaded verts
+	if(vOccluded != 1.0) {
+
+		int vEdge = int(vEdgeB / vEdgeA);
+		vec3 vertA = vertexIndex(edgeIndex(vEdge)),
+			vertB = vertexIndex(edgeIndex(vEdge + 1));
 
 
-	float brightness = (distance(vWorldPosition.xz, vIntersectPoint) * -0.7) + 1.0;
+		vec2 point = intersectPoint(vertA.xz, vertB.xz, uPlayerPosition.xz, vWorldPosition.xz);
+		if(onLine(point, vertA.xz, vertB.xz) && onLine(point, uPlayerPosition.xz, vWorldPosition.xz)) {
 
-	gl_FragColor *= max(0.0, min(1.0, brightness));
+			float brightness = (distance(vWorldPosition.xz, point) * -0.7) + 1.0;
+			gl_FragColor *= max(0.0, min(1.0, brightness));
 
-	
 
+		} else {
+			gl_FragColor.xyz = vec3(0.0, 1.0, 0.0);
+		}
+
+	} else {
+
+		float brightness = (distance(vWorldPosition.xz, vIntersectPoint) * -0.7) + 1.0;
+		gl_FragColor *= max(0.0, min(1.0, brightness));
+	}
 }
 
 
-// vec3 not_vLightFront = vLightFront - 0.9; 
-// not_vLightFront = not_vLightFront * 3.0;
-// not_vLightFront = min(not_vLightFront, 1.0);
-// not_vLightFront = max(not_vLightFront, 0.5);
-
-// gl_FragColor.xyz *= not_vLightFront;
+vec3 not_vLightFront = vLightFront - 0.9; 
+not_vLightFront = not_vLightFront * 3.0;
+not_vLightFront = min(not_vLightFront, 1.0);
+not_vLightFront = max(not_vLightFront, 0.5);
+gl_FragColor.xyz *= not_vLightFront;
 
 // if(intersect(uVOVerts[52].xz, uVOVerts[51].xz, uPlayerPosition.xz, vWorldPosition.xz)) {
 // 	gl_FragColor *= 0.2;

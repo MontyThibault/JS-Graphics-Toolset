@@ -3,8 +3,11 @@ varying vec3 vLightFront;
 
 /////////////////////////////
 varying vec4 vWorldPosition;
+
 varying float vOccluded;
 varying vec2 vIntersectPoint;
+varying float vEdgeA;
+varying float vEdgeB;
 
 uniform vec3 uPlayerPosition;
 
@@ -409,6 +412,10 @@ vec2 point;
 vOccluded = 0.0;
 vIntersectPoint = worldPosition.xz;
 
+
+vEdgeA = 0.0;
+vEdgeB = 0.0;
+
 for(int i = 0; i < uVOEdgesLength; i += 2) {
 
 	// vertA = uVOVerts[uVOEdges[i]];
@@ -448,6 +455,14 @@ for(int i = 0; i < uVOEdgesLength; i += 2) {
 
 		vOccluded = 1.0;
 		vIntersectPoint = point;
+
+
+		// Reconstructable in the fragment shader
+		// i = vEdgeB / vEdgeA
+		// http://bytecode-rhapsody.blogspot.ca/2014/09/glsl-passing-uninterpolated-varyings.html
+		vEdgeA = 1.0;
+		vEdgeB = float(i);
+
 		break;
 	}
 }

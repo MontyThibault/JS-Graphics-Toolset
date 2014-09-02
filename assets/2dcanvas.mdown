@@ -1,0 +1,10 @@
+2d canvas optimization:
+
+Method 1:
+Define a box for each call
+Clear the boxes 
+
+Method 2 : 
+Define a box for the first call
+Expand the box for each new call
+Clear the box
