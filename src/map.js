@@ -161,7 +161,7 @@ engine.map = (function() {
 
 	    		//callback(exports.mesh);
                 var obj = new THREE.Object3D();
-                obj.add(lines);
+                // obj.add(lines);
                 obj.add(exports.mesh);
                 callback(obj);
             });

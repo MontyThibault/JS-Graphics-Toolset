@@ -451,7 +451,7 @@ for(int i = 0; i < uVOEdgesLength; i += 2) {
 	//Disable for slowness
 
 	point = intersectPoint(vertA.xz, vertB.xz, uPlayerPosition.xz, worldPosition.xz);
-	if(onLine(point, vertA.xz, vertB.xz) && onLine(point, uPlayerPosition.xz, vWorldPosition.xz)) {
+	if(onLine(point, vertA.xz, vertB.xz) && onLine(point, uPlayerPosition.xz, worldPosition.xz)) {
 
 		vOccluded = 1.0;
 		vIntersectPoint = point;

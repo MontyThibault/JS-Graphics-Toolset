@@ -166,7 +166,7 @@ bool withinRadius(vec2 a, vec2 b, float radius) {
 // Overcomplicated way to do vVOVerts[i]
 vec3 vertexIndex(int i) {
 
-	for(int j = 0; j <uVOVertsLength; j++) {
+	for(int j = 0; j < uVOVertsLength; j++) {
 		if(j == i) {
 			return uVOVerts[j];
 		}
@@ -175,11 +175,16 @@ vec3 vertexIndex(int i) {
 
 int edgeIndex(int i) {
 
-	for(int j = 0; j <uVOEdgesLength; j++) {
+	for(int j = 0; j < uVOEdgesLength; j++) {
 		if(j == i) {
 			return uVOEdges[j];
 		}
 	}
+}
+
+void drawShaded(vec2 point) {
+	float brightness = (distance(vWorldPosition.xz, point) * -0.7) + 1.0;
+	gl_FragColor *= max(0.0, min(1.0, brightness));
 }
 
 
@@ -347,7 +352,7 @@ if(vOccluded != 0.0) {
 	// On a face with a combination of shaded and unshaded verts
 	if(vOccluded != 1.0) {
 
-		int vEdge = int(vEdgeB / vEdgeA);
+		int vEdge = int((vEdgeB / vEdgeA) + 0.5);
 		vec3 vertA = vertexIndex(edgeIndex(vEdge)),
 			vertB = vertexIndex(edgeIndex(vEdge + 1));
 
@@ -355,18 +360,12 @@ if(vOccluded != 0.0) {
 		vec2 point = intersectPoint(vertA.xz, vertB.xz, uPlayerPosition.xz, vWorldPosition.xz);
 		if(onLine(point, vertA.xz, vertB.xz) && onLine(point, uPlayerPosition.xz, vWorldPosition.xz)) {
 
-			float brightness = (distance(vWorldPosition.xz, point) * -0.7) + 1.0;
-			gl_FragColor *= max(0.0, min(1.0, brightness));
+			drawShaded(point);
 
-
-		} else {
-			gl_FragColor.xyz = vec3(0.0, 1.0, 0.0);
 		}
-
 	} else {
 
-		float brightness = (distance(vWorldPosition.xz, vIntersectPoint) * -0.7) + 1.0;
-		gl_FragColor *= max(0.0, min(1.0, brightness));
+		drawShaded(vIntersectPoint);
 	}
 }
 
