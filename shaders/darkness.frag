@@ -352,7 +352,10 @@ if(vOccluded != 0.0) {
 	// On a face with a combination of shaded and unshaded verts
 	if(vOccluded != 1.0) {
 
+		// Add a small offset to protect from slipping down during truncation
 		int vEdge = int((vEdgeB / vEdgeA) + 0.5);
+		
+
 		vec3 vertA = vertexIndex(edgeIndex(vEdge)),
 			vertB = vertexIndex(edgeIndex(vEdge + 1));
 
@@ -371,9 +374,9 @@ if(vOccluded != 0.0) {
 
 
 vec3 not_vLightFront = vLightFront - 0.9; 
-not_vLightFront = not_vLightFront * 3.0;
+not_vLightFront = not_vLightFront * 2.0;
 not_vLightFront = min(not_vLightFront, 1.0);
-not_vLightFront = max(not_vLightFront, 0.5);
+not_vLightFront = max(not_vLightFront, 0.2);
 gl_FragColor.xyz *= not_vLightFront;
 
 // if(intersect(uVOVerts[52].xz, uVOVerts[51].xz, uPlayerPosition.xz, vWorldPosition.xz)) {
