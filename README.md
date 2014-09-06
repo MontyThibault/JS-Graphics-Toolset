@@ -13,4 +13,31 @@ A local `engine` object can be accessed within all code inside of the main wrapp
 
 ## TODO
 - Optimize darkness shader
+	- Send geometry as datatextures
+	- New line segment collision algorithm
+	- JS edge ordering
+	- Clean up code
+
+
 - Create debug tools (canvas overlay/object selection/movement)
+
+- Player movement collision checking
+
+
+
+
+
+map.js
+
+parsing function
+
+sortEdges
+
+line function
+
+loader
+
+
+function Map() {
+	
+}

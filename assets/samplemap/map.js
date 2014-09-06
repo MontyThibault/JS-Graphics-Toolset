@@ -11,7 +11,9 @@
 		"uvs"           : [3898],
 		"materials"     : 0,
 		"morphTargets"  : 0,
-		"bones"         : 0
+		"bones"         : 0,
+
+		"type": "map"
 	},
 
 	"scale" : 1.000000,

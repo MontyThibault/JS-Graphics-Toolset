@@ -1,5 +1,5 @@
 /* Created by Monty Thibault
-   Last updated Sep 1, 2014
+   Last updated Sep 6, 2014
    montythibault@gmail.com */
 
 
@@ -357,7 +357,7 @@ engine.userInput = (function() {
 //////////////////
 // display.js
 
-engine.fps = 60;
+engine.fps = 5;
 engine.display = (function() {
 
 	var renderer, stats,
@@ -1644,6 +1644,11 @@ engine.map = (function() {
     // JSONLoader
     var oldParse = THREE.JSONLoader.prototype.parse;
     THREE.JSONLoader.prototype.parse = function(json, texturePath) {
+
+        if(json.metadata.type !== 'map') {
+            return oldParse(json, texturePath);
+        }
+
         var obj = oldParse(json, texturePath),
             geo = obj.geometry;
 
@@ -1739,18 +1744,19 @@ engine.map = (function() {
                     b1 = vertexOrder.indexOf(b[0]),
                     b2 = vertexOrder.indexOf(b[1]);
 
-                // Math.min(x1, x2) refers to the close vertex of the edge
-                // Math.max(x1, x2) refers to the far vertex of the edge
+                // Math.min(x1, x2) refers to the closest vertex
+                // Math.max(x1, x2) refers to the farthest vertex
 
-                if(Math.min(a1, a2) === Math.min(b1, b2)) {
+                // if(Math.min(a1, a2) === Math.min(b1, b2)) {
 
-                    return Math.max(a1, a2) > Math.max(b1, b2);
+                //     return Math.max(a1, a2) > Math.max(b1, b2);
 
-                } else {
-                    return Math.min(a1, a2) > Math.min(b1, b2);
-                }
+                // } else {
+                     return Math.min(a1, a2) > Math.min(b1, b2);
+                // }
             }); 
-
+            engine.vertexOrder = vertexOrder;
+            
             return engine.flatten(edgePairs);
         };
     })();
@@ -1905,10 +1911,11 @@ engine.player = (function() {
 		if(loaded) {
 			engine.map.material.uniforms.uPlayerPosition.value.copy(engine.player.position);
 
-			// engine.map.viewOcclusion.edgePairs = engine.map.sortEdges(engine.player.position, engine.map.viewOcclusion);
-			// engine.map.material.uniforms.uVOEdges.value = engine.map.viewOcclusion.edgePairs;
-			// console.clear();
-			// console.log(engine.map.viewOcclusion.edgePairs);
+			console.clear();
+			engine.map.viewOcclusion.edgePairs = engine.map.sortEdges(engine.player.position, engine.map.viewOcclusion, false);
+			engine.map.material.uniforms.uVOEdges.value = engine.map.viewOcclusion.edgePairs;
+			
+			console.log(engine.map.viewOcclusion.edgePairs);
 		}
 		engine.topdownCamera.update();
 		engine.display.render(scene, engine.topdownCamera.cam);
