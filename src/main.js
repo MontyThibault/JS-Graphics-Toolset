@@ -33,9 +33,8 @@
 			engine.map.material.uniforms.uPlayerPosition.value.copy(engine.player.position);
 
 			console.clear();
-			engine.map.viewOcclusion.edgePairs = engine.map.sortEdges(engine.player.position, engine.map.viewOcclusion, false);
-			engine.map.material.uniforms.uVOEdges.value = engine.map.viewOcclusion.edgePairs;
-			
+			engine.map.material.uniforms.uVOEdges.value = engine.map.sortEdges(engine.player.position, engine.map.viewOcclusion, 10, true);
+
 			console.log(engine.map.viewOcclusion.edgePairs);
 		}
 		engine.topdownCamera.update();

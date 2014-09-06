@@ -1,4 +1,4 @@
-engine.fps = 5;
+engine.fps = 60;
 engine.display = (function() {
 
 	var renderer, stats,

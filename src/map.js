@@ -103,7 +103,7 @@ engine.map = (function() {
         }
 
         // Sorts edges arranged from closest to farthest from the given vec3 target
-        return function(target, vo, updateVO) {
+        return function(target, vo, cutoff, updateVO) {
 
             if(vertexOrder.length === 0 || updateVO !== false) {
                 updateVertexOrder(target, vo);
@@ -124,16 +124,23 @@ engine.map = (function() {
                 // Math.min(x1, x2) refers to the closest vertex
                 // Math.max(x1, x2) refers to the farthest vertex
 
-                // if(Math.min(a1, a2) === Math.min(b1, b2)) {
 
-                //     return Math.max(a1, a2) > Math.max(b1, b2);
 
-                // } else {
-                     return Math.min(a1, a2) > Math.min(b1, b2);
-                // }
+                if(Math.min(a1, a2) === Math.min(b1, b2)) {
+
+                    return Math.max(a1, a2) < Math.max(b1, b2) ? -1 : 1;
+
+                } else {
+
+                    return Math.min(a1, a2) < Math.min(b1, b2) ? -1 : 1;
+                }
             }); 
-            engine.vertexOrder = vertexOrder;
-            
+
+            // Return no more than <cutoff> number of edges
+            if(cutoff) {
+                edgePairs = edgePairs.slice(0, cutoff);
+            }
+
             return engine.flatten(edgePairs);
         };
     })();

@@ -39,5 +39,15 @@ loader
 
 
 function Map() {
-	
+	this.geo = geometry;
+	this.vo = viewOccluder;
+	this.edges = [];	
 }
+
+Map.prototype.load = function(callback) {
+	
+};
+
+Map.prototype.generateLines = function() {
+	
+};

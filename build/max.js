@@ -357,7 +357,7 @@ engine.userInput = (function() {
 //////////////////
 // display.js
 
-engine.fps = 5;
+engine.fps = 60;
 engine.display = (function() {
 
 	var renderer, stats,
@@ -1726,7 +1726,7 @@ engine.map = (function() {
         }
 
         // Sorts edges arranged from closest to farthest from the given vec3 target
-        return function(target, vo, updateVO) {
+        return function(target, vo, cutoff, updateVO) {
 
             if(vertexOrder.length === 0 || updateVO !== false) {
                 updateVertexOrder(target, vo);
@@ -1747,16 +1747,23 @@ engine.map = (function() {
                 // Math.min(x1, x2) refers to the closest vertex
                 // Math.max(x1, x2) refers to the farthest vertex
 
-                // if(Math.min(a1, a2) === Math.min(b1, b2)) {
 
-                //     return Math.max(a1, a2) > Math.max(b1, b2);
 
-                // } else {
-                     return Math.min(a1, a2) > Math.min(b1, b2);
-                // }
+                if(Math.min(a1, a2) === Math.min(b1, b2)) {
+
+                    return Math.max(a1, a2) < Math.max(b1, b2) ? -1 : 1;
+
+                } else {
+
+                    return Math.min(a1, a2) < Math.min(b1, b2) ? -1 : 1;
+                }
             }); 
-            engine.vertexOrder = vertexOrder;
-            
+
+            // Return no more than <cutoff> number of edges
+            if(cutoff) {
+                edgePairs = edgePairs.slice(0, cutoff);
+            }
+
             return engine.flatten(edgePairs);
         };
     })();
@@ -1912,9 +1919,8 @@ engine.player = (function() {
 			engine.map.material.uniforms.uPlayerPosition.value.copy(engine.player.position);
 
 			console.clear();
-			engine.map.viewOcclusion.edgePairs = engine.map.sortEdges(engine.player.position, engine.map.viewOcclusion, false);
-			engine.map.material.uniforms.uVOEdges.value = engine.map.viewOcclusion.edgePairs;
-			
+			engine.map.material.uniforms.uVOEdges.value = engine.map.sortEdges(engine.player.position, engine.map.viewOcclusion, 10, true);
+
 			console.log(engine.map.viewOcclusion.edgePairs);
 		}
 		engine.topdownCamera.update();
