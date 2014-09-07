@@ -66,7 +66,7 @@ engine.display = (function() {
 	}
 
 	function fullscreen() {
-		renderer.setSize(window.innerWidth, window.innerHeight - 5);
+		renderer.setSize(window.innerWidth, window.innerHeight);
 
 		exports.canvas2d.width = window.innerWidth;
 		exports.canvas2d.height = window.innerHeight;

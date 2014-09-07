@@ -15,39 +15,12 @@ A local `engine` object can be accessed within all code inside of the main wrapp
 - Optimize darkness shader
 	- Send geometry as datatextures
 	- New line segment collision algorithm
-	- JS edge ordering
-	- Clean up code
+	- JS edge ordering [CHECK]
+	- Clean up code [CHECK]  (in progress)
+		- Look for automatic ways to do material updates
+			- Similar to map.js hack?
 
 
 - Create debug tools (canvas overlay/object selection/movement)
 
 - Player movement collision checking
-
-
-
-
-
-map.js
-
-parsing function
-
-sortEdges
-
-line function
-
-loader
-
-
-function Map() {
-	this.geo = geometry;
-	this.vo = viewOccluder;
-	this.edges = [];	
-}
-
-Map.prototype.load = function(callback) {
-	
-};
-
-Map.prototype.generateLines = function() {
-	
-};

@@ -1,10 +1,10 @@
 // Must be called after shaders have loaded
-engine.materials = {};
-engine.initMaterials = function() {
+engine.materials = {
+	init: function() {
 
-	engine.materials.darkness = function(config) {
+		this.darkness = function(texture, map) {
 
-		var vo = engine.map.viewOcclusion;
+		var vo = map.viewOccluder;
 
 		var uniforms = THREE.UniformsUtils.merge([
 			THREE.UniformsLib.common,
