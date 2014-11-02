@@ -1,4 +1,4 @@
-engine.grid = (function() {
+g.grid = (function() {
 
 	function NumberGrid(config) {
 		this.box = config.box;

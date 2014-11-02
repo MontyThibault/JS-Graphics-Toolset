@@ -1,31 +1,31 @@
 // Little shim so that functions that will always be called in a given context
-engine.context = function(func, context) {
+g.context = function(func, context) {
 	return function() {
 		func.apply(context, arguments);
 	};
 };
 
-engine.flatten = function(arr) {
+g.flatten = function(arr) {
 	return arr.concat.apply([], arr);
 };
 
 // Converts from normal screen space coordinates to relative coordinates, where
 // x's and y's range from -1 to 1 with (0, 0) being the exact center of the screen
-engine.relativeCoord = function(vec) {
+g.relativeCoord = function(vec) {
 	vec.x = (vec.x / window.innerWidth) * 2 - 1;
 	vec.y = -(vec.y / window.innerHeight) * 2 + 1;
 
 	return vec;
 };
 
-engine.absoluteCoord = function(vec) {
+g.absoluteCoord = function(vec) {
 	vec.x = (vec.x + 1) / 2 * window.innerWidth;
 	vec.y = (vec.y - 1) / 2 * -window.innerHeight;
 
 	return vec;
 };
 
-engine.intersect = (function() {
+g.intersect = (function() {
 	var vec = new THREE.Vector3(),
 		raycaster = new THREE.Raycaster();
 
@@ -35,7 +35,7 @@ engine.intersect = (function() {
 	};
 })();
 
-engine.project = (function() {
+g.project = (function() {
 	var vec = new THREE.Vector3(),
 		projector = new THREE.Projector();
 
@@ -46,7 +46,7 @@ engine.project = (function() {
 	};
 })();
 
-engine.unproject = (function() {
+g.unproject = (function() {
 	var vec = new THREE.Vector3(),
 		projector = new THREE.Projector();
 
@@ -61,7 +61,7 @@ engine.unproject = (function() {
 // a ray and return any intersections in the provided list of objects. If no 
 // objects are given, it will default to giant plane. Useful for seeing which
 // 3d objects the mouse is currently hovering over/clicking on.
-engine.raycastMouse = (function() {
+g.raycastMouse = (function() {
 	var plane = new THREE.Mesh(new THREE.PlaneGeometry(10000, 10000, 1, 1));
 	plane.rotation.x = -Math.PI / 2; // Flat
 	plane.updateMatrixWorld(); // Or else raycasting doesn't work properly
@@ -70,23 +70,23 @@ engine.raycastMouse = (function() {
 		var cameraPosition = 
 				new THREE.Vector3().setFromMatrixPosition(cam.matrixWorld);
 
-		// if(!engine.userInput.pressed.l) return false;
+		// if(!g.userInput.pressed.l) return false;
 
 		var mouse = new THREE.Vector3(
 			clientX, 
 			clientY, 
 			0.5);
-		mouse = engine.relativeCoord(mouse);
-		mouse = engine.unproject(mouse, cam);
+		mouse = g.relativeCoord(mouse);
+		mouse = g.unproject(mouse, cam);
 
-		return engine.intersect(
+		return g.intersect(
 			cameraPosition, 
 			mouse, 
 			objects || [plane]);
 	};
 })();
 
-engine.addPoint = function(vector, scale) {
+g.addPoint = function(vector, scale) {
 	var cube = new THREE.Mesh(
 		new THREE.BoxGeometry(1, 1, 1),
 		new THREE.MeshBasicMaterial({ color: 0x00FF00 }));

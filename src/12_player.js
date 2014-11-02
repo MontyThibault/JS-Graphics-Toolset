@@ -1,4 +1,4 @@
-engine.player = (function() {
+g.player = (function() {
 
 	var obj = new THREE.Object3D(),
 		pointLight = new THREE.PointLight(0xFFFFFF, 2, 50),

@@ -1,4 +1,4 @@
-engine.Map = (function() {
+g.Map = (function() {
 
     // Create a wrapper for the parsing function, which is automatically called
     // by JSONLoader
@@ -112,7 +112,7 @@ engine.Map = (function() {
                 texture.minFilter = THREE.NearestFilter;
                 texture.anisotropy = 16;
 
-                that.material = new engine.materials.darkness(texture, that);
+                that.material = new g.materials.darkness(texture, that);
 
                 var lines = that.generateVOLines(that.viewOccluder);
 
@@ -241,7 +241,7 @@ engine.Map = (function() {
         // Perhaps useful for optimization 
         var trimmed = cutoff ? vo.edgePairs.slice(0, cutoff) : vo.edgePairs;
 
-        return engine.flatten(trimmed);
+        return g.flatten(trimmed);
     };
 
     return Map;

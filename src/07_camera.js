@@ -1,4 +1,4 @@
-engine.tumbleCamera = (function() {
+g.tumbleCamera = (function() {
 
 	var zoom, yaw, pitch, pivot,
 		exports = {
@@ -55,8 +55,8 @@ engine.tumbleCamera = (function() {
 
 	function listen() {
 		window.addEventListener('resize', resize, false);
-		engine.userInput.md.push(mousedown);
-		engine.userInput.mm.push(mousemove);
+		g.userInput.md.push(mousedown);
+		g.userInput.mm.push(mousemove);
 	}
 	
 	// Controls
@@ -72,7 +72,7 @@ engine.tumbleCamera = (function() {
             // Project the current mouse position to a (mostly) infinite ground 
             // plane. This allows us to compute camera movements in world space,
             // rather than screen space.
-            var intersect = engine.raycastMouse(e.clientX, e.clientY, exports.cam)[0];
+            var intersect = g.raycastMouse(e.clientX, e.clientY, exports.cam)[0];
             if(intersect) {
                 activeButton = 'l';
                 mouseDragOld = intersect.point;
@@ -94,7 +94,7 @@ engine.tumbleCamera = (function() {
         clientXOld = e.clientX;
         clientYOld = e.clientY;
         
-        if('r' in engine.userInput.pressed) {
+        if('r' in g.userInput.pressed) {
             
             yaw.rotation.y -= diffX / 200;
             pitch.rotation.z += diffY / 200;
@@ -102,7 +102,7 @@ engine.tumbleCamera = (function() {
      
         } 
 
-        if('m' in engine.userInput.pressed) {
+        if('m' in g.userInput.pressed) {
        
             var factor = Math.pow(1.01, diffY);
 			zoom.scale.multiplyScalar(factor);
@@ -111,12 +111,12 @@ engine.tumbleCamera = (function() {
 	}
 	
 	function update() {
-        if(!('l' in engine.userInput.pressed)) { return; }
+        if(!('l' in g.userInput.pressed)) { return; }
 
         // Find how much the mouse has moved in world space since the last frame
-        var intersect = engine.raycastMouse(
-            engine.userInput.clientX, 
-            engine.userInput.clientY,
+        var intersect = g.raycastMouse(
+            g.userInput.clientX, 
+            g.userInput.clientY,
             exports.cam)[0];
 
         if(!intersect) return;
@@ -135,7 +135,7 @@ engine.tumbleCamera = (function() {
 	return exports;
 })();
 
-engine.topdownCamera = (function() {
+g.topdownCamera = (function() {
 	var zoom, yaw, pivot,
 		exports = {
 			init: init,
@@ -178,7 +178,7 @@ engine.topdownCamera = (function() {
 
 	function listen() {
 		window.addEventListener('resize', resize, false);
-		engine.userInput.md.push(mousedown);
+		g.userInput.md.push(mousedown);
 	}
 
 	function resize() {
@@ -202,7 +202,7 @@ engine.topdownCamera = (function() {
 		rotateSensitivity = 0.05, 
 		smoothness = 0.1;
 
-	engine.target = target;
+	g.target = target;
 
 	function update() {
 		moveTarget();
@@ -210,13 +210,13 @@ engine.topdownCamera = (function() {
 		updateDrag();
 
 
-		engine.player.position.copy(target.position);
+		g.player.position.copy(target.position);
 	}
 
 	function moveTarget() {
-		if('l' in engine.userInput.pressed) return;
+		if('l' in g.userInput.pressed) return;
 
-		if(16 in engine.userInput.pressed) {
+		if(16 in g.userInput.pressed) {
 			moveSensitivity = 0.01;
 			rotateSensitivity = 0.01;
 		} else {
@@ -224,32 +224,32 @@ engine.topdownCamera = (function() {
 			rotateSensitivity = 0.05;
 		}
 
-		if(w in engine.userInput.pressed) {
+		if(w in g.userInput.pressed) {
 			target.position.z -= Math.cos(yaw.rotation.y) * moveSensitivity;
 			target.position.x -= Math.sin(yaw.rotation.y) * moveSensitivity;
 		}
 
-		if(s in engine.userInput.pressed) {
+		if(s in g.userInput.pressed) {
 			target.position.z += Math.cos(yaw.rotation.y) * moveSensitivity;
 			target.position.x += Math.sin(yaw.rotation.y) * moveSensitivity;
 		}
 
 		var r = Math.PI / 2;
-		if(a in engine.userInput.pressed) {
+		if(a in g.userInput.pressed) {
 			target.position.z -= Math.cos(yaw.rotation.y + r) * moveSensitivity;
 			target.position.x -= Math.sin(yaw.rotation.y + r) * moveSensitivity;
 		}
 
-		if(d in engine.userInput.pressed) {
+		if(d in g.userInput.pressed) {
 			target.position.z -= Math.cos(yaw.rotation.y - r) * moveSensitivity;
 			target.position.x -= Math.sin(yaw.rotation.y - r) * moveSensitivity;
 		}
 
-		if(q in engine.userInput.pressed) {
+		if(q in g.userInput.pressed) {
 			target.rotation.y -= rotateSensitivity;
 		}
 
-		if(e in engine.userInput.pressed) {
+		if(e in g.userInput.pressed) {
 			target.rotation.y += rotateSensitivity;
 		}
 	}
@@ -280,7 +280,7 @@ engine.topdownCamera = (function() {
             // Project the current mouse position to a (mostly) infinite ground 
             // plane. This allows us to compute camera movements in world space,
             // rather than screen space.
-            var intersect = engine.raycastMouse(e.clientX, e.clientY, 
+            var intersect = g.raycastMouse(e.clientX, e.clientY, 
             		exports.cam)[0];
 
             if(intersect) {
@@ -290,12 +290,12 @@ engine.topdownCamera = (function() {
     }
 
     function updateDrag() {
-    	if(!('l' in engine.userInput.pressed)) { return; }
+    	if(!('l' in g.userInput.pressed)) { return; }
 
         // Find how much the mouse has moved in world space since the last frame
-        var intersect = engine.raycastMouse(
-            engine.userInput.clientX, 
-            engine.userInput.clientY,
+        var intersect = g.raycastMouse(
+            g.userInput.clientX, 
+            g.userInput.clientY,
             exports.cam)[0];
 
         if(!intersect) return;

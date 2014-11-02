@@ -1,4 +1,4 @@
-engine.pathfinding = (function() {
+g.pathfinding = (function() {
 
 	var valid = function(node, grid) {
 		// Do not return nodes that are outside the grid
@@ -98,7 +98,7 @@ engine.pathfinding = (function() {
 			});
 
 			if(++counter >= 1) {
-				engine.activePlayer.visualGrid.highlight(open);
+				g.activePlayer.visualGrid.highlight(open);
 				break;
 			}
 

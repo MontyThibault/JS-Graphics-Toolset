@@ -9,7 +9,7 @@
 'use strict';
 (function($, THREE, undefined) {
 
-var engine = {};
+var g = {}; // Global namespace
 
 
 
@@ -17,33 +17,33 @@ var engine = {};
 // 02_utils.js
 
 // Little shim so that functions that will always be called in a given context
-engine.context = function(func, context) {
+g.context = function(func, context) {
 	return function() {
 		func.apply(context, arguments);
 	};
 };
 
-engine.flatten = function(arr) {
+g.flatten = function(arr) {
 	return arr.concat.apply([], arr);
 };
 
 // Converts from normal screen space coordinates to relative coordinates, where
 // x's and y's range from -1 to 1 with (0, 0) being the exact center of the screen
-engine.relativeCoord = function(vec) {
+g.relativeCoord = function(vec) {
 	vec.x = (vec.x / window.innerWidth) * 2 - 1;
 	vec.y = -(vec.y / window.innerHeight) * 2 + 1;
 
 	return vec;
 };
 
-engine.absoluteCoord = function(vec) {
+g.absoluteCoord = function(vec) {
 	vec.x = (vec.x + 1) / 2 * window.innerWidth;
 	vec.y = (vec.y - 1) / 2 * -window.innerHeight;
 
 	return vec;
 };
 
-engine.intersect = (function() {
+g.intersect = (function() {
 	var vec = new THREE.Vector3(),
 		raycaster = new THREE.Raycaster();
 
@@ -53,7 +53,7 @@ engine.intersect = (function() {
 	};
 })();
 
-engine.project = (function() {
+g.project = (function() {
 	var vec = new THREE.Vector3(),
 		projector = new THREE.Projector();
 
@@ -64,7 +64,7 @@ engine.project = (function() {
 	};
 })();
 
-engine.unproject = (function() {
+g.unproject = (function() {
 	var vec = new THREE.Vector3(),
 		projector = new THREE.Projector();
 
@@ -79,7 +79,7 @@ engine.unproject = (function() {
 // a ray and return any intersections in the provided list of objects. If no 
 // objects are given, it will default to giant plane. Useful for seeing which
 // 3d objects the mouse is currently hovering over/clicking on.
-engine.raycastMouse = (function() {
+g.raycastMouse = (function() {
 	var plane = new THREE.Mesh(new THREE.PlaneGeometry(10000, 10000, 1, 1));
 	plane.rotation.x = -Math.PI / 2; // Flat
 	plane.updateMatrixWorld(); // Or else raycasting doesn't work properly
@@ -88,23 +88,23 @@ engine.raycastMouse = (function() {
 		var cameraPosition = 
 				new THREE.Vector3().setFromMatrixPosition(cam.matrixWorld);
 
-		// if(!engine.userInput.pressed.l) return false;
+		// if(!g.userInput.pressed.l) return false;
 
 		var mouse = new THREE.Vector3(
 			clientX, 
 			clientY, 
 			0.5);
-		mouse = engine.relativeCoord(mouse);
-		mouse = engine.unproject(mouse, cam);
+		mouse = g.relativeCoord(mouse);
+		mouse = g.unproject(mouse, cam);
 
-		return engine.intersect(
+		return g.intersect(
 			cameraPosition, 
 			mouse, 
 			objects || [plane]);
 	};
 })();
 
-engine.addPoint = function(vector, scale) {
+g.addPoint = function(vector, scale) {
 	var cube = new THREE.Mesh(
 		new THREE.BoxGeometry(1, 1, 1),
 		new THREE.MeshBasicMaterial({ color: 0x00FF00 }));
@@ -154,7 +154,7 @@ engine.addPoint = function(vector, scale) {
 //////////////////
 // 03_shaders.js
 
-engine.shaders = (function() {
+g.shaders = (function() {
 
 	var	files = [
 		'darkness.vert',
@@ -175,7 +175,7 @@ engine.shaders = (function() {
 			if(files.length) {
 				load(callback);
 			} else {
-				engine.materials.init(shaders);
+				g.materials.init(shaders);
 				callback();
 			}
 		});
@@ -190,7 +190,7 @@ engine.shaders = (function() {
 //////////////////
 // 04_materials.js
 
-engine.materials = {
+g.materials = {
 
 	// Must be called after shaders have loaded
 	init: function(shaders) {
@@ -205,7 +205,7 @@ engine.materials = {
 				{
 					'uPlayerPosition': {
 						type: 'v3',
-						value: engine.player.position
+						value: g.player.position
 					},
 
 					'uVOVerts': {
@@ -233,8 +233,8 @@ engine.materials = {
 				'uVOEdgesLength': vo.edgePairs.length
 			};
 
-			var vertexShader = engine.shaders['darkness.vert'],
-				fragmentShader = engine.shaders['darkness.frag'];
+			var vertexShader = g.shaders['darkness.vert'],
+				fragmentShader = g.shaders['darkness.frag'];
 
 			var mat = new THREE.ShaderMaterial({
 				lights: true,
@@ -257,7 +257,7 @@ engine.materials = {
 // 05_userinput.js
 
 // state of keyboard and mouse
-engine.userInput = (function() {
+g.userInput = (function() {
         
 
     var exports = {
@@ -319,7 +319,7 @@ engine.userInput = (function() {
     function mousemove(e) {
         // Limit to video framerate. Browsers call this at 999fps for some reason
         var timestamp = new Date().getTime();
-        if((timestamp - lastcalled) >= (1000 / engine.fps)) {
+        if((timestamp - lastcalled) >= (1000 / g.fps)) {
             lastcalled = timestamp;
             
             exports.clientX = e.clientX;
@@ -360,8 +360,8 @@ engine.userInput = (function() {
 //////////////////
 // 06_display.js
 
-engine.fps = 60;
-engine.display = (function() {
+g.fps = 60;
+g.display = (function() {
 
 	var renderer, stats,
 		exports = {
@@ -447,7 +447,7 @@ engine.display = (function() {
 //////////////////
 // 07_camera.js
 
-engine.tumbleCamera = (function() {
+g.tumbleCamera = (function() {
 
 	var zoom, yaw, pitch, pivot,
 		exports = {
@@ -504,8 +504,8 @@ engine.tumbleCamera = (function() {
 
 	function listen() {
 		window.addEventListener('resize', resize, false);
-		engine.userInput.md.push(mousedown);
-		engine.userInput.mm.push(mousemove);
+		g.userInput.md.push(mousedown);
+		g.userInput.mm.push(mousemove);
 	}
 	
 	// Controls
@@ -521,7 +521,7 @@ engine.tumbleCamera = (function() {
             // Project the current mouse position to a (mostly) infinite ground 
             // plane. This allows us to compute camera movements in world space,
             // rather than screen space.
-            var intersect = engine.raycastMouse(e.clientX, e.clientY, exports.cam)[0];
+            var intersect = g.raycastMouse(e.clientX, e.clientY, exports.cam)[0];
             if(intersect) {
                 activeButton = 'l';
                 mouseDragOld = intersect.point;
@@ -543,7 +543,7 @@ engine.tumbleCamera = (function() {
         clientXOld = e.clientX;
         clientYOld = e.clientY;
         
-        if('r' in engine.userInput.pressed) {
+        if('r' in g.userInput.pressed) {
             
             yaw.rotation.y -= diffX / 200;
             pitch.rotation.z += diffY / 200;
@@ -551,7 +551,7 @@ engine.tumbleCamera = (function() {
      
         } 
 
-        if('m' in engine.userInput.pressed) {
+        if('m' in g.userInput.pressed) {
        
             var factor = Math.pow(1.01, diffY);
 			zoom.scale.multiplyScalar(factor);
@@ -560,12 +560,12 @@ engine.tumbleCamera = (function() {
 	}
 	
 	function update() {
-        if(!('l' in engine.userInput.pressed)) { return; }
+        if(!('l' in g.userInput.pressed)) { return; }
 
         // Find how much the mouse has moved in world space since the last frame
-        var intersect = engine.raycastMouse(
-            engine.userInput.clientX, 
-            engine.userInput.clientY,
+        var intersect = g.raycastMouse(
+            g.userInput.clientX, 
+            g.userInput.clientY,
             exports.cam)[0];
 
         if(!intersect) return;
@@ -584,7 +584,7 @@ engine.tumbleCamera = (function() {
 	return exports;
 })();
 
-engine.topdownCamera = (function() {
+g.topdownCamera = (function() {
 	var zoom, yaw, pivot,
 		exports = {
 			init: init,
@@ -627,7 +627,7 @@ engine.topdownCamera = (function() {
 
 	function listen() {
 		window.addEventListener('resize', resize, false);
-		engine.userInput.md.push(mousedown);
+		g.userInput.md.push(mousedown);
 	}
 
 	function resize() {
@@ -651,7 +651,7 @@ engine.topdownCamera = (function() {
 		rotateSensitivity = 0.05, 
 		smoothness = 0.1;
 
-	engine.target = target;
+	g.target = target;
 
 	function update() {
 		moveTarget();
@@ -659,13 +659,13 @@ engine.topdownCamera = (function() {
 		updateDrag();
 
 
-		engine.player.position.copy(target.position);
+		g.player.position.copy(target.position);
 	}
 
 	function moveTarget() {
-		if('l' in engine.userInput.pressed) return;
+		if('l' in g.userInput.pressed) return;
 
-		if(16 in engine.userInput.pressed) {
+		if(16 in g.userInput.pressed) {
 			moveSensitivity = 0.01;
 			rotateSensitivity = 0.01;
 		} else {
@@ -673,32 +673,32 @@ engine.topdownCamera = (function() {
 			rotateSensitivity = 0.05;
 		}
 
-		if(w in engine.userInput.pressed) {
+		if(w in g.userInput.pressed) {
 			target.position.z -= Math.cos(yaw.rotation.y) * moveSensitivity;
 			target.position.x -= Math.sin(yaw.rotation.y) * moveSensitivity;
 		}
 
-		if(s in engine.userInput.pressed) {
+		if(s in g.userInput.pressed) {
 			target.position.z += Math.cos(yaw.rotation.y) * moveSensitivity;
 			target.position.x += Math.sin(yaw.rotation.y) * moveSensitivity;
 		}
 
 		var r = Math.PI / 2;
-		if(a in engine.userInput.pressed) {
+		if(a in g.userInput.pressed) {
 			target.position.z -= Math.cos(yaw.rotation.y + r) * moveSensitivity;
 			target.position.x -= Math.sin(yaw.rotation.y + r) * moveSensitivity;
 		}
 
-		if(d in engine.userInput.pressed) {
+		if(d in g.userInput.pressed) {
 			target.position.z -= Math.cos(yaw.rotation.y - r) * moveSensitivity;
 			target.position.x -= Math.sin(yaw.rotation.y - r) * moveSensitivity;
 		}
 
-		if(q in engine.userInput.pressed) {
+		if(q in g.userInput.pressed) {
 			target.rotation.y -= rotateSensitivity;
 		}
 
-		if(e in engine.userInput.pressed) {
+		if(e in g.userInput.pressed) {
 			target.rotation.y += rotateSensitivity;
 		}
 	}
@@ -729,7 +729,7 @@ engine.topdownCamera = (function() {
             // Project the current mouse position to a (mostly) infinite ground 
             // plane. This allows us to compute camera movements in world space,
             // rather than screen space.
-            var intersect = engine.raycastMouse(e.clientX, e.clientY, 
+            var intersect = g.raycastMouse(e.clientX, e.clientY, 
             		exports.cam)[0];
 
             if(intersect) {
@@ -739,12 +739,12 @@ engine.topdownCamera = (function() {
     }
 
     function updateDrag() {
-    	if(!('l' in engine.userInput.pressed)) { return; }
+    	if(!('l' in g.userInput.pressed)) { return; }
 
         // Find how much the mouse has moved in world space since the last frame
-        var intersect = engine.raycastMouse(
-            engine.userInput.clientX, 
-            engine.userInput.clientY,
+        var intersect = g.raycastMouse(
+            g.userInput.clientX, 
+            g.userInput.clientY,
             exports.cam)[0];
 
         if(!intersect) return;
@@ -767,7 +767,7 @@ engine.topdownCamera = (function() {
 //////////////////
 // 08_grid.js
 
-engine.grid = (function() {
+g.grid = (function() {
 
 	function NumberGrid(config) {
 		this.box = config.box;
@@ -1352,7 +1352,7 @@ engine.grid = (function() {
 //////////////////
 // 09_pathfinding.js
 
-engine.pathfinding = (function() {
+g.pathfinding = (function() {
 
 	var valid = function(node, grid) {
 		// Do not return nodes that are outside the grid
@@ -1452,7 +1452,7 @@ engine.pathfinding = (function() {
 			});
 
 			if(++counter >= 1) {
-				engine.activePlayer.visualGrid.highlight(open);
+				g.activePlayer.visualGrid.highlight(open);
 				break;
 			}
 
@@ -1518,12 +1518,12 @@ engine.pathfinding = (function() {
 //////////////////
 // 10_overlays.js
 
-engine.overlays = (function() {
+g.overlays = (function() {
 
 	var _height = 0;
 	var _translate = new THREE.Matrix4();
 
-	var s = engine.shaders;
+	var s = g.shaders;
 	
 	function Overlay(box) {
 		this.box = box; // THREE.Box2
@@ -1573,7 +1573,7 @@ engine.overlays = (function() {
 		Overlay.call(this, box);
 		var size = box.size();
 
-		this.colorData = new engine.grid.ColorGrid(box);
+		this.colorData = new g.grid.ColorGrid(box);
 
 		this.texture = new THREE.DataTexture(
 			this.colorData.view, 
@@ -1624,7 +1624,7 @@ engine.overlays = (function() {
 //////////////////
 // 11_map.js
 
-engine.Map = (function() {
+g.Map = (function() {
 
     // Create a wrapper for the parsing function, which is automatically called
     // by JSONLoader
@@ -1738,7 +1738,7 @@ engine.Map = (function() {
                 texture.minFilter = THREE.NearestFilter;
                 texture.anisotropy = 16;
 
-                that.material = new engine.materials.darkness(texture, that);
+                that.material = new g.materials.darkness(texture, that);
 
                 var lines = that.generateVOLines(that.viewOccluder);
 
@@ -1867,7 +1867,7 @@ engine.Map = (function() {
         // Perhaps useful for optimization 
         var trimmed = cutoff ? vo.edgePairs.slice(0, cutoff) : vo.edgePairs;
 
-        return engine.flatten(trimmed);
+        return g.flatten(trimmed);
     };
 
     return Map;
@@ -1878,7 +1878,7 @@ engine.Map = (function() {
 //////////////////
 // 12_player.js
 
-engine.player = (function() {
+g.player = (function() {
 
 	var obj = new THREE.Object3D(),
 		pointLight = new THREE.PointLight(0xFFFFFF, 2, 50),
@@ -1901,22 +1901,22 @@ engine.player = (function() {
 //////////////////
 // 13_main.js
 
-(function main(engine) {
+(function main(g) {
 
-	window.engine = engine;
+	window.g = g;
 
-	engine.display.init();
-	engine.topdownCamera.init();
+	g.display.init();
+	g.topdownCamera.init();
 
-	engine.userInput.listen();
-	engine.display.listen();
-	engine.topdownCamera.listen();
+	g.userInput.listen();
+	g.display.listen();
+	g.topdownCamera.listen();
 
 	var sampleMap;
 
-	engine.shaders.load(function() {
+	g.shaders.load(function() {
 
-		sampleMap = new engine.Map({
+		sampleMap = new g.Map({
 			geometryPath: 'assets/samplemap/map.js',
 			texturePath: 'assets/samplemap/Colormap.png'
 		});
@@ -1932,8 +1932,8 @@ engine.player = (function() {
 	});
 
 	var scene = new THREE.Scene();
-	scene.add(engine.topdownCamera.obj);
-	scene.add(engine.player);
+	scene.add(g.topdownCamera.obj);
+	scene.add(g.player);
 
 	window.scene = scene;
 	var loaded = false;
@@ -1944,27 +1944,27 @@ engine.player = (function() {
 
 			// TODO refactor this into material's own update function? OR incorportate hierarchichcal world update function <----
 
-			sampleMap.material.uniforms.uPlayerPosition.value.copy(engine.player.position);
+			sampleMap.material.uniforms.uPlayerPosition.value.copy(g.player.position);
 
 			console.clear();
-			sampleMap.material.uniforms.uVOEdges.value = sampleMap.generateVOEdges(engine.player.position, 10);
+			sampleMap.material.uniforms.uVOEdges.value = sampleMap.generateVOEdges(g.player.position, 10);
 
 			console.log(sampleMap.viewOccluder.edgePairs);
 		}
-		engine.topdownCamera.update();
-		engine.display.render(scene, engine.topdownCamera.cam);
+		g.topdownCamera.update();
+		g.display.render(scene, g.topdownCamera.cam);
 
 		//if(loaded) return;
 
-		if(engine.fps === 60) {
+		if(g.fps === 60) {
             window.requestAnimationFrame(frame);
-		} else if(engine.fps === 0) {
+		} else if(g.fps === 0) {
 			window.setZeroTimeout(frame); // MAXIMUM PERFORMANCE
 		} else {
-            window.setTimeout(frame, 1000 / engine.fps);
+            window.setTimeout(frame, 1000 / g.fps);
 		}
 	})();
-})(engine);
+})(g);
 
 
 

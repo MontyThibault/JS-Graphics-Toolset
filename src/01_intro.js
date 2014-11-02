@@ -1,4 +1,4 @@
 'use strict';
 (function($, THREE, undefined) {
 
-var engine = {};
+var g = {}; // Global namespace

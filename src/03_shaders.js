@@ -1,4 +1,4 @@
-engine.shaders = (function() {
+g.shaders = (function() {
 
 	var	files = [
 		'darkness.vert',
@@ -19,7 +19,7 @@ engine.shaders = (function() {
 			if(files.length) {
 				load(callback);
 			} else {
-				engine.materials.init(shaders);
+				g.materials.init(shaders);
 				callback();
 			}
 		});

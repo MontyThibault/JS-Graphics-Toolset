@@ -1,4 +1,4 @@
-engine.materials = {
+g.materials = {
 
 	// Must be called after shaders have loaded
 	init: function(shaders) {
@@ -13,7 +13,7 @@ engine.materials = {
 				{
 					'uPlayerPosition': {
 						type: 'v3',
-						value: engine.player.position
+						value: g.player.position
 					},
 
 					'uVOVerts': {
@@ -41,8 +41,8 @@ engine.materials = {
 				'uVOEdgesLength': vo.edgePairs.length
 			};
 
-			var vertexShader = engine.shaders['darkness.vert'],
-				fragmentShader = engine.shaders['darkness.frag'];
+			var vertexShader = g.shaders['darkness.vert'],
+				fragmentShader = g.shaders['darkness.frag'];
 
 			var mat = new THREE.ShaderMaterial({
 				lights: true,

@@ -1,5 +1,5 @@
 // state of keyboard and mouse
-engine.userInput = (function() {
+g.userInput = (function() {
         
 
     var exports = {
@@ -61,7 +61,7 @@ engine.userInput = (function() {
     function mousemove(e) {
         // Limit to video framerate. Browsers call this at 999fps for some reason
         var timestamp = new Date().getTime();
-        if((timestamp - lastcalled) >= (1000 / engine.fps)) {
+        if((timestamp - lastcalled) >= (1000 / g.fps)) {
             lastcalled = timestamp;
             
             exports.clientX = e.clientX;

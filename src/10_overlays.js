@@ -1,9 +1,9 @@
-engine.overlays = (function() {
+g.overlays = (function() {
 
 	var _height = 0;
 	var _translate = new THREE.Matrix4();
 
-	var s = engine.shaders;
+	var s = g.shaders;
 	
 	function Overlay(box) {
 		this.box = box; // THREE.Box2
@@ -53,7 +53,7 @@ engine.overlays = (function() {
 		Overlay.call(this, box);
 		var size = box.size();
 
-		this.colorData = new engine.grid.ColorGrid(box);
+		this.colorData = new g.grid.ColorGrid(box);
 
 		this.texture = new THREE.DataTexture(
 			this.colorData.view, 
