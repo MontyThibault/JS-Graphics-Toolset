@@ -4,7 +4,7 @@
 
 
 //////////////////
-// intro.js
+// 01_intro.js
 
 'use strict';
 (function($, THREE, undefined) {
@@ -14,7 +14,7 @@ var engine = {};
 
 
 //////////////////
-// utils.js
+// 02_utils.js
 
 // Little shim so that functions that will always be called in a given context
 engine.context = function(func, context) {
@@ -152,7 +152,7 @@ engine.addPoint = function(vector, scale) {
 
 
 //////////////////
-// shaders.js
+// 03_shaders.js
 
 engine.shaders = (function() {
 
@@ -188,7 +188,7 @@ engine.shaders = (function() {
 
 
 //////////////////
-// materials.js
+// 04_materials.js
 
 engine.materials = {
 
@@ -254,7 +254,7 @@ engine.materials = {
 
 
 //////////////////
-// userinput.js
+// 05_userinput.js
 
 // state of keyboard and mouse
 engine.userInput = (function() {
@@ -358,7 +358,7 @@ engine.userInput = (function() {
 
 
 //////////////////
-// display.js
+// 06_display.js
 
 engine.fps = 60;
 engine.display = (function() {
@@ -445,7 +445,7 @@ engine.display = (function() {
 
 
 //////////////////
-// camera.js
+// 07_camera.js
 
 engine.tumbleCamera = (function() {
 
@@ -765,7 +765,7 @@ engine.topdownCamera = (function() {
 
 
 //////////////////
-// grid.js
+// 08_grid.js
 
 engine.grid = (function() {
 
@@ -1350,7 +1350,7 @@ engine.grid = (function() {
 
 
 //////////////////
-// pathfinding.js
+// 09_pathfinding.js
 
 engine.pathfinding = (function() {
 
@@ -1516,7 +1516,7 @@ engine.pathfinding = (function() {
 
 
 //////////////////
-// overlays.js
+// 10_overlays.js
 
 engine.overlays = (function() {
 
@@ -1622,7 +1622,7 @@ engine.overlays = (function() {
 
 
 //////////////////
-// map.js
+// 11_map.js
 
 engine.Map = (function() {
 
@@ -1876,7 +1876,7 @@ engine.Map = (function() {
 
 
 //////////////////
-// player.js
+// 12_player.js
 
 engine.player = (function() {
 
@@ -1899,7 +1899,7 @@ engine.player = (function() {
 
 
 //////////////////
-// main.js
+// 13_main.js
 
 (function main(engine) {
 
@@ -1969,6 +1969,6 @@ engine.player = (function() {
 
 
 //////////////////
-// outro.js
+// 14_outro.js
 
 })($, THREE);

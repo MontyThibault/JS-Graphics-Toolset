@@ -7,20 +7,20 @@ min_js = 'build/min.js'
 
 # file list (from the root/src folder)
 files = [
-    'intro.js',
-    'utils.js',
-    'shaders.js',
-    'materials.js',
-    'userinput.js',
-    'display.js',
-    'camera.js',
-    'grid.js',
-    'pathfinding.js',
-    'overlays.js',
-    'map.js',
-    'player.js',
-    'main.js',
-    'outro.js'
+    '01_intro.js',
+    '02_utils.js',
+    '03_shaders.js',
+    '04_materials.js',
+    '05_userinput.js',
+    '06_display.js',
+    '07_camera.js',
+    '08_grid.js',
+    '09_pathfinding.js',
+    '10_overlays.js',
+    '11_map.js',
+    '12_player.js',
+    '13_main.js',
+    '14_outro.js'
 ]
 
 # execute the task
