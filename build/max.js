@@ -246,6 +246,11 @@ g.materials = {
 
 			mat.map = texture;
 
+			mat.update = function() {
+				uniforms.uPlayerPosition.value.copy(g.player.position);
+				uniforms.uVOEdges.value = map.generateVOEdges(g.player.position);
+			};
+
 			return mat;
 		};
 	}
@@ -635,9 +640,9 @@ g.topdownCamera = (function() {
 		exports.cam.updateProjectionMatrix();
 	}
 
-	// Here, the `target` object holds the ideal values for positioning/rotation/scale.
-	// moveTowardsTarget() will interpolate some percentage between the values
-	// Thus creating a nice smoothing effect
+	// Here, the `target` object holds the ideal values for positioning/rotation
+	// /scale. moveTowardsTarget() will interpolate some percentage between the
+	// actual values and target. Thus creating a nice smoothing effect
 
 	var w = 'W'.charCodeAt(0),
 		s = 'S'.charCodeAt(0),
@@ -651,20 +656,19 @@ g.topdownCamera = (function() {
 		rotateSensitivity = 0.05, 
 		smoothness = 0.1;
 
-	g.target = target;
-
 	function update() {
 		moveTarget();
 		moveTowardsTarget();
 		updateDrag();
 
-
+		// Temporary. For keeping the green player cube in the center.
 		g.player.position.copy(target.position);
 	}
 
 	function moveTarget() {
 		if('l' in g.userInput.pressed) return;
 
+		// Code 16 is shift
 		if(16 in g.userInput.pressed) {
 			moveSensitivity = 0.01;
 			rotateSensitivity = 0.01;
@@ -1870,6 +1874,12 @@ g.Map = (function() {
         return g.flatten(trimmed);
     };
 
+    /** Frame by frame update function.
+      */
+    Map.prototype.update = function() {
+        this.material.update();
+    }
+
     return Map;
 })();
 
@@ -1912,7 +1922,12 @@ g.player = (function() {
 	g.display.listen();
 	g.topdownCamera.listen();
 
-	var sampleMap;
+	var scene = new THREE.Scene();
+	scene.add(g.topdownCamera.obj);
+	scene.add(g.player);
+
+	var sampleMap,
+		loaded = false;
 
 	g.shaders.load(function() {
 
@@ -1931,30 +1946,15 @@ g.player = (function() {
 		});
 	});
 
-	var scene = new THREE.Scene();
-	scene.add(g.topdownCamera.obj);
-	scene.add(g.player);
-
-	window.scene = scene;
-	var loaded = false;
 	(function frame() {
 		window.frame = frame;
 
 		if(loaded) {
-
-			// TODO refactor this into material's own update function? OR incorportate hierarchichcal world update function <----
-
-			sampleMap.material.uniforms.uPlayerPosition.value.copy(g.player.position);
-
-			console.clear();
-			sampleMap.material.uniforms.uVOEdges.value = sampleMap.generateVOEdges(g.player.position, 10);
-
-			console.log(sampleMap.viewOccluder.edgePairs);
+			sampleMap.update();
 		}
 		g.topdownCamera.update();
 		g.display.render(scene, g.topdownCamera.cam);
 
-		//if(loaded) return;
 
 		if(g.fps === 60) {
             window.requestAnimationFrame(frame);

@@ -54,6 +54,11 @@ g.materials = {
 
 			mat.map = texture;
 
+			mat.update = function() {
+				uniforms.uPlayerPosition.value.copy(g.player.position);
+				uniforms.uVOEdges.value = map.generateVOEdges(g.player.position);
+			};
+
 			return mat;
 		};
 	}

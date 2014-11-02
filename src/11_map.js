@@ -244,5 +244,11 @@ g.Map = (function() {
         return g.flatten(trimmed);
     };
 
+    /** Frame by frame update function.
+      */
+    Map.prototype.update = function() {
+        this.material.update();
+    }
+
     return Map;
 })();

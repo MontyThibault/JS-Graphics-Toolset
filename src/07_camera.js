@@ -186,9 +186,9 @@ g.topdownCamera = (function() {
 		exports.cam.updateProjectionMatrix();
 	}
 
-	// Here, the `target` object holds the ideal values for positioning/rotation/scale.
-	// moveTowardsTarget() will interpolate some percentage between the values
-	// Thus creating a nice smoothing effect
+	// Here, the `target` object holds the ideal values for positioning/rotation
+	// /scale. moveTowardsTarget() will interpolate some percentage between the
+	// actual values and target. Thus creating a nice smoothing effect
 
 	var w = 'W'.charCodeAt(0),
 		s = 'S'.charCodeAt(0),
@@ -202,20 +202,19 @@ g.topdownCamera = (function() {
 		rotateSensitivity = 0.05, 
 		smoothness = 0.1;
 
-	g.target = target;
-
 	function update() {
 		moveTarget();
 		moveTowardsTarget();
 		updateDrag();
 
-
+		// Temporary. For keeping the green player cube in the center.
 		g.player.position.copy(target.position);
 	}
 
 	function moveTarget() {
 		if('l' in g.userInput.pressed) return;
 
+		// Code 16 is shift
 		if(16 in g.userInput.pressed) {
 			moveSensitivity = 0.01;
 			rotateSensitivity = 0.01;
