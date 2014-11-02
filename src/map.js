@@ -1,4 +1,4 @@
-engine.map = (function() {
+engine.Map = (function() {
 
     // Create a wrapper for the parsing function, which is automatically called
     // by JSONLoader
@@ -59,6 +59,8 @@ engine.map = (function() {
     }
 
 
+    // TODO rename to prevent confusion between gameworld maps and texture maps
+
     /** Playable terrain in the game world. Must have geometry, a view occluder,
      * and a texture.
      *
@@ -66,8 +68,8 @@ engine.map = (function() {
      * @constructor
     **/
     function Map(config) {
-        this.geometryPath = config.geometryPath;
-        this.texturePath = config.texturePath;
+        this.geometryPath = config.geometryPath || 'NOPATH';
+        this.texturePath = config.texturePath || 'NOPATH';
 
         this.geometry = null;
         this.texture = null;
@@ -81,7 +83,7 @@ engine.map = (function() {
     }
 
 
-    var $path = $('#path'), 
+    var $pathLabel = $('#pathLabel'), 
         loader = new THREE.JSONLoader();
 
     /** Loads geometry, texture, and sets properties
@@ -91,16 +93,16 @@ engine.map = (function() {
      * @method load
      */
     Map.prototype.load = function(callback) {
-        var t = new Date().getTime(),
+        var t = new Date().getTime(), // force browser refresh
             that = this;
 
-        $path.text(this.meshPath);
-        loader.load(this.meshPath + '?t=' + t, function (geometry) {
+        $pathLabel.text(this.geometryPath);
+        loader.load(this.geometryPath + '?t=' + t, function (geometry) {
 
             that.geometry = geometry;
             that.viewOccluder = geometry.viewOccluder;
 
-            $path.text(that.texturePath);
+            $pathLabel.text(that.texturePath);
             THREE.ImageUtils.loadTexture(that.texturePath + '?t=' + t, 
                 THREE.UVMapping, function(texture) {
 
@@ -110,9 +112,7 @@ engine.map = (function() {
                 texture.minFilter = THREE.NearestFilter;
                 texture.anisotropy = 16;
 
-                that.material = new engine.materials.darkness({
-                    map: texture
-                });
+                that.material = new engine.materials.darkness(texture, that);
 
                 var lines = that.generateVOLines(that.viewOccluder);
 
@@ -204,20 +204,22 @@ engine.map = (function() {
       * uniform into a shader that implements view occlusion. Edges are sorted
       * by distance (closest first) to the target.
       *
-      * @ param {Vector3} target Usually be player.position
+      * @ param {Vector3} target Usually player.position
       * @ param {Int} cutoff The max number of edges in the array
       */
     Map.prototype.generateVOEdges = function(target, cutoff) {
 
         updateVertexOrder(this, target);
 
-        var vo = that.viewOccluder;
+        var vo = this.viewOccluder,
+            that = this;
+
         vo.edgePairs.sort(function(a, b) {
 
-            var a1 = vertexOrder.indexOf(a[0]),
-                a2 = vertexOrder.indexOf(a[1]),
-                b1 = vertexOrder.indexOf(b[0]),
-                b2 = vertexOrder.indexOf(b[1]);
+            var a1 = that.vertexOrder.indexOf(a[0]),
+                a2 = that.vertexOrder.indexOf(a[1]),
+                b1 = that.vertexOrder.indexOf(b[0]),
+                b2 = that.vertexOrder.indexOf(b[1]);
 
             // Math.min(x1, x2) refers to the closest vertex
             // Math.max(x1, x2) refers to the farthest vertex
@@ -235,8 +237,9 @@ engine.map = (function() {
             }
         }); 
 
-        // Return no more than <cutoff> number of edges
-        var trimmed = cutoff ? vo.edgePairs.slice(0, cuttoff) : vo.edgePairs;
+        // Return no more than <cutoff> number of edges.
+        // Perhaps useful for optimization 
+        var trimmed = cutoff ? vo.edgePairs.slice(0, cutoff) : vo.edgePairs;
 
         return engine.flatten(trimmed);
     };

@@ -9,8 +9,16 @@
 	engine.display.listen();
 	engine.topdownCamera.listen();
 
+	var sampleMap;
+
 	engine.shaders.load(function() {
-		engine.map.load(function(mesh) {
+
+		sampleMap = new engine.Map({
+			geometryPath: 'assets/samplemap/map.js',
+			texturePath: 'assets/samplemap/Colormap.png'
+		});
+
+		sampleMap.load(function(mesh) {
 
 			$('#loader').fadeOut();
 
@@ -30,12 +38,15 @@
 		window.frame = frame;
 
 		if(loaded) {
-			engine.map.material.uniforms.uPlayerPosition.value.copy(engine.player.position);
+
+			// TODO refactor this into material's own update function? OR incorportate hierarchichcal world update function <----
+
+			sampleMap.material.uniforms.uPlayerPosition.value.copy(engine.player.position);
 
 			console.clear();
-			engine.map.material.uniforms.uVOEdges.value = engine.map.sortEdges(engine.player.position, engine.map.viewOcclusion, 10, true);
+			sampleMap.material.uniforms.uVOEdges.value = sampleMap.generateVOEdges(engine.player.position, 10);
 
-			console.log(engine.map.viewOcclusion.edgePairs);
+			console.log(sampleMap.viewOccluder.edgePairs);
 		}
 		engine.topdownCamera.update();
 		engine.display.render(scene, engine.topdownCamera.cam);
