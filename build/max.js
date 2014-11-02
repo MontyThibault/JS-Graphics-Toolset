@@ -195,9 +195,9 @@ g.materials = {
 	// Must be called after shaders have loaded
 	init: function(shaders) {
 
-		this.darkness = function(texture, map) {
+		this.darkness = function(texture, world) {
 
-			var vo = map.viewOccluder;
+			var vo = world.viewOccluder;
 
 			var uniforms = THREE.UniformsUtils.merge([
 				THREE.UniformsLib.common,
@@ -215,7 +215,7 @@ g.materials = {
 
 					'uVOEdges': {
 						type: 'iv1',
-						value: [] // map.generateVOEdges
+						value: [] // world.generateVOEdges
 					},
 
 					'uVOTexture': {
@@ -248,7 +248,7 @@ g.materials = {
 
 			mat.update = function() {
 				uniforms.uPlayerPosition.value.copy(g.player.position);
-				uniforms.uVOEdges.value = map.generateVOEdges(g.player.position);
+				uniforms.uVOEdges.value = world.generateVOEdges(g.player.position);
 			};
 
 			return mat;
@@ -1626,16 +1626,16 @@ g.overlays = (function() {
 
 
 //////////////////
-// 11_map.js
+// 11_world.js
 
-g.Map = (function() {
+g.World = (function() {
 
     // Create a wrapper for the parsing function, which is automatically called
     // by JSONLoader
     var oldParse = THREE.JSONLoader.prototype.parse;
     THREE.JSONLoader.prototype.parse = function(json, texturePath) {
 
-        if(json.metadata.type !== 'map') {
+        if(json.metadata.type !== 'world') {
             return oldParse(json, texturePath);
         }
 
@@ -1651,9 +1651,13 @@ g.Map = (function() {
         return obj;
     };
 
-    // Generates viewOccluder.edgePairs of the form [[A1, B1], [A2, B2]]
-    // which can collapse into an array of ints [A1, B1, A2, B2 ... ] 
-    // that can be fed into a shader
+
+    // Converts from singly-linked edgeVerts structure to edgePairs. edgePairs
+    // must be used for viewOccluder because shaders only accept flat arrays of 
+    // ints.
+
+    // See assets/worldspec.mdown for more
+    
     function makeEdgePairs(edgeVerts) {
         var edgePairs = [];
 
@@ -1689,15 +1693,13 @@ g.Map = (function() {
     }
 
 
-    // TODO rename to prevent confusion between gameworld maps and texture maps
-
     /** Playable terrain in the game world. Must have geometry, a view occluder,
      * and a texture.
      *
-     * @class Map
+     * @class World
      * @constructor
     **/
-    function Map(config) {
+    function World(config) {
         this.geometryPath = config.geometryPath || 'NOPATH';
         this.texturePath = config.texturePath || 'NOPATH';
 
@@ -1719,10 +1721,10 @@ g.Map = (function() {
     /** Loads geometry, texture, and sets properties
      *
      * @param callback
-     * @class Map
+     * @class World
      * @method load
      */
-    Map.prototype.load = function(callback) {
+    World.prototype.load = function(callback) {
         var t = new Date().getTime(), // force browser refresh
             that = this;
 
@@ -1760,10 +1762,10 @@ g.Map = (function() {
     /** Returns scenegraph object composed of individual lines for visualization
      * of the view occluder.
      *
-     * @class Map
+     * @class World
      * @method generateVOLines
      **/
-    Map.prototype.generateVOLines = function() {
+    World.prototype.generateVOLines = function() {
 
         var v = this.viewOccluder,
             material = new THREE.LineBasicMaterial({
@@ -1808,9 +1810,9 @@ g.Map = (function() {
         return bigObj;
     };
 
-    /** Sorts view occluder vertices by distance (closest first) to the target
+    /** Sorts viewOccluder vertices by distance (closest first) to the target
      *
-     * @class Map
+     * @class World
      * @method updateVertexOrder
      * @private
      **/
@@ -1832,12 +1834,12 @@ g.Map = (function() {
 
     /** Returns an array of the form [A1, B1, A2, B2 ...] that is fed as a 
       * uniform into a shader that implements view occlusion. Edges are sorted
-      * by distance (closest first) to the target.
+      * by distance (closest first) to the target, for optimization purposes.
       *
       * @ param {Vector3} target Usually player.position
       * @ param {Int} cutoff The max number of edges in the array
       */
-    Map.prototype.generateVOEdges = function(target, cutoff) {
+    World.prototype.generateVOEdges = function(target, cutoff) {
 
         updateVertexOrder(this, target);
 
@@ -1876,11 +1878,11 @@ g.Map = (function() {
 
     /** Frame by frame update function.
       */
-    Map.prototype.update = function() {
+    World.prototype.update = function() {
         this.material.update();
     }
 
-    return Map;
+    return World;
 })();
 
 
@@ -1926,17 +1928,17 @@ g.player = (function() {
 	scene.add(g.topdownCamera.obj);
 	scene.add(g.player);
 
-	var sampleMap,
+	var sampleWorld,
 		loaded = false;
 
 	g.shaders.load(function() {
 
-		sampleMap = new g.Map({
-			geometryPath: 'assets/samplemap/map.js',
-			texturePath: 'assets/samplemap/Colormap.png'
+		sampleWorld = new g.World({
+			geometryPath: 'assets/sampleWorld/world.js',
+			texturePath: 'assets/sampleWorld/Colormap.png'
 		});
 
-		sampleMap.load(function(mesh) {
+		sampleWorld.load(function(mesh) {
 
 			$('#loader').fadeOut();
 
@@ -1950,7 +1952,7 @@ g.player = (function() {
 		window.frame = frame;
 
 		if(loaded) {
-			sampleMap.update();
+			sampleWorld.update();
 		}
 		g.topdownCamera.update();
 		g.display.render(scene, g.topdownCamera.cam);

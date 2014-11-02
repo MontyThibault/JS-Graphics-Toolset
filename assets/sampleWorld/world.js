@@ -13,7 +13,7 @@
 		"morphTargets"  : 0,
 		"bones"         : 0,
 
-		"type": "map"
+		"type": "world"
 	},
 
 	"scale" : 1.000000,
@@ -84,9 +84,4 @@
 
 
 }
-
-
-
-
-
 }

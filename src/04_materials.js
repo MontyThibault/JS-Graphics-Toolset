@@ -3,9 +3,9 @@ g.materials = {
 	// Must be called after shaders have loaded
 	init: function(shaders) {
 
-		this.darkness = function(texture, map) {
+		this.darkness = function(texture, world) {
 
-			var vo = map.viewOccluder;
+			var vo = world.viewOccluder;
 
 			var uniforms = THREE.UniformsUtils.merge([
 				THREE.UniformsLib.common,
@@ -23,7 +23,7 @@ g.materials = {
 
 					'uVOEdges': {
 						type: 'iv1',
-						value: [] // map.generateVOEdges
+						value: [] // world.generateVOEdges
 					},
 
 					'uVOTexture': {
@@ -56,7 +56,7 @@ g.materials = {
 
 			mat.update = function() {
 				uniforms.uPlayerPosition.value.copy(g.player.position);
-				uniforms.uVOEdges.value = map.generateVOEdges(g.player.position);
+				uniforms.uVOEdges.value = world.generateVOEdges(g.player.position);
 			};
 
 			return mat;

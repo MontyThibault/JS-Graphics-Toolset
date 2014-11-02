@@ -17,7 +17,7 @@ files = [
     '08_grid.js',
     '09_pathfinding.js',
     '10_overlays.js',
-    '11_map.js',
+    '11_world.js',
     '12_player.js',
     '13_main.js',
     '14_outro.js'

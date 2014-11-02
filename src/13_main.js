@@ -13,17 +13,17 @@
 	scene.add(g.topdownCamera.obj);
 	scene.add(g.player);
 
-	var sampleMap,
+	var sampleWorld,
 		loaded = false;
 
 	g.shaders.load(function() {
 
-		sampleMap = new g.Map({
-			geometryPath: 'assets/samplemap/map.js',
-			texturePath: 'assets/samplemap/Colormap.png'
+		sampleWorld = new g.World({
+			geometryPath: 'assets/sampleWorld/world.js',
+			texturePath: 'assets/sampleWorld/Colormap.png'
 		});
 
-		sampleMap.load(function(mesh) {
+		sampleWorld.load(function(mesh) {
 
 			$('#loader').fadeOut();
 
@@ -37,7 +37,7 @@
 		window.frame = frame;
 
 		if(loaded) {
-			sampleMap.update();
+			sampleWorld.update();
 		}
 		g.topdownCamera.update();
 		g.display.render(scene, g.topdownCamera.cam);
