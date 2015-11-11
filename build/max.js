@@ -142,7 +142,9 @@ g.shaders = (function() {
 
 	var	files = [
 		'darkness.vert',
-		'darkness.frag'];
+		'darkness.frag',
+		'lambert.vert',
+		'lambert.frag'];
 
 	var shaders = {},
 		$pathLabel = $('#pathLabel');
@@ -220,21 +222,19 @@ g.materials = {
 			var vertexShader = g.shaders['darkness.vert'],
 				fragmentShader = g.shaders['darkness.frag'];
 
-			// var mat = new THREE.ShaderMaterial({
-			// 	lights: true,
-			// 	vertexShader: vertexShader,
-			// 	fragmentShader: fragmentShader,
-			// 	uniforms: uniforms,
-			// 	defines: defines
-			// });
-
-			var mat = new THREE.MeshBasicMaterial();
+			var mat = new THREE.ShaderMaterial({
+				lights: true,
+				vertexShader: vertexShader,
+				fragmentShader: fragmentShader,
+				uniforms: uniforms,
+				defines: defines
+			});
 
 			mat.map = texture;
 
 			mat.update = function() {
 				uniforms.uPlayerPosition.value.copy(g.player.position);
-				uniforms.uVOEdges.value = world.generateVOEdges(g.player.position);
+				uniforms.uVOEdges.value = world.generateVOEdges(g.player.position, 100);
 			};
 
 			return mat;

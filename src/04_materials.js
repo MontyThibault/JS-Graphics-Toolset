@@ -44,15 +44,13 @@ g.materials = {
 			var vertexShader = g.shaders['darkness.vert'],
 				fragmentShader = g.shaders['darkness.frag'];
 
-			// var mat = new THREE.ShaderMaterial({
-			// 	lights: true,
-			// 	vertexShader: vertexShader,
-			// 	fragmentShader: fragmentShader,
-			// 	uniforms: uniforms,
-			// 	defines: defines
-			// });
-
-			var mat = new THREE.MeshBasicMaterial();
+			var mat = new THREE.ShaderMaterial({
+				lights: true,
+				vertexShader: vertexShader,
+				fragmentShader: fragmentShader,
+				uniforms: uniforms,
+				defines: defines
+			});
 
 			mat.map = texture;
 

@@ -2,7 +2,9 @@ g.shaders = (function() {
 
 	var	files = [
 		'darkness.vert',
-		'darkness.frag'];
+		'darkness.frag',
+		'lambert.vert',
+		'lambert.frag'];
 
 	var shaders = {},
 		$pathLabel = $('#pathLabel');
