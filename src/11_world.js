@@ -105,11 +105,13 @@ g.World = (function() {
             that.viewOccluder = geometry.viewOccluder;
 
             $pathLabel.text(that.texturePath);
-            THREE.ImageUtils.loadTexture(that.texturePath + '?t=' + t, 
-                THREE.UVMapping, function(texture) {
+
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load(that.texturePath + '?t=' + t, function(texture) {
 
                 that.texture = texture;
 
+                texture.mapping = THREE.UVMapping;
                 texture.magFilter = THREE.NearestFilter;
                 texture.minFilter = THREE.NearestFilter;
                 texture.anisotropy = 16;

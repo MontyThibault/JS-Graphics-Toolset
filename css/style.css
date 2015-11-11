@@ -2,7 +2,7 @@ html, body {
 	padding: 0px;
 	margin: 0px;
 	overflow: hidden;
-	background: black;// beige;
+	background: black;// beige
 }
 
 canvas {
@@ -44,8 +44,17 @@ canvas {
 	color: white;
 	text-align: center;
 	font-family: 'Arial';
+	border-bottom: 1px solid #444444;
+	z-index: 100;
 }
 
-#info a {
-	color: #FFFFFF;
+
+#info > a {
+	color: #91ff97;
+	text-decoration: none;
+	text-shadow: 0px 1px 1px #406e43;
+}
+#info > a:hover {
+	color: #d8ffda;
+	-webkit-transition: color 0.5s;
 }

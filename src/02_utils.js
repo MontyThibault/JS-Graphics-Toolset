@@ -35,27 +35,11 @@ g.intersect = (function() {
 	};
 })();
 
-g.project = (function() {
-	var vec = new THREE.Vector3(),
-		projector = new THREE.Projector();
 
-	return function(v, cam) {
-		return projector.projectVector(
-			vec.copy(v), 
-			cam);
-	};
-})();
 
-g.unproject = (function() {
-	var vec = new THREE.Vector3(),
-		projector = new THREE.Projector();
+// g.project and g.unproject are now methods of the vector prototype
+// Thanks to THREE.js update
 
-	return function(v, cam) {
-		return projector.unprojectVector(
-			vec.copy(v), 
-			cam);
-	};
-})();
 
 // Given a set of mouse coordinates in absolute screen space, this will project
 // a ray and return any intersections in the provided list of objects. If no 
@@ -77,7 +61,7 @@ g.raycastMouse = (function() {
 			clientY, 
 			0.5);
 		mouse = g.relativeCoord(mouse);
-		mouse = g.unproject(mouse, cam);
+		mouse.unproject(cam);
 
 		return g.intersect(
 			cameraPosition, 

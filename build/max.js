@@ -1,5 +1,5 @@
 /* Created by Monty Thibault
-   Last updated Nov 2, 2014
+   Last updated Nov 11, 2015
    montythibault@gmail.com */
 
 
@@ -53,27 +53,11 @@ g.intersect = (function() {
 	};
 })();
 
-g.project = (function() {
-	var vec = new THREE.Vector3(),
-		projector = new THREE.Projector();
 
-	return function(v, cam) {
-		return projector.projectVector(
-			vec.copy(v), 
-			cam);
-	};
-})();
 
-g.unproject = (function() {
-	var vec = new THREE.Vector3(),
-		projector = new THREE.Projector();
+// g.project and g.unproject are now methods of the vector prototype
+// Thanks to THREE.js update
 
-	return function(v, cam) {
-		return projector.unprojectVector(
-			vec.copy(v), 
-			cam);
-	};
-})();
 
 // Given a set of mouse coordinates in absolute screen space, this will project
 // a ray and return any intersections in the provided list of objects. If no 
@@ -95,7 +79,7 @@ g.raycastMouse = (function() {
 			clientY, 
 			0.5);
 		mouse = g.relativeCoord(mouse);
-		mouse = g.unproject(mouse, cam);
+		mouse.unproject(cam);
 
 		return g.intersect(
 			cameraPosition, 
@@ -236,13 +220,15 @@ g.materials = {
 			var vertexShader = g.shaders['darkness.vert'],
 				fragmentShader = g.shaders['darkness.frag'];
 
-			var mat = new THREE.ShaderMaterial({
-				lights: true,
-				vertexShader: vertexShader,
-				fragmentShader: fragmentShader,
-				uniforms: uniforms,
-				defines: defines
-			});
+			// var mat = new THREE.ShaderMaterial({
+			// 	lights: true,
+			// 	vertexShader: vertexShader,
+			// 	fragmentShader: fragmentShader,
+			// 	uniforms: uniforms,
+			// 	defines: defines
+			// });
+
+			var mat = new THREE.MeshBasicMaterial();
 
 			mat.map = texture;
 
@@ -396,7 +382,7 @@ g.display = (function() {
 
 		stats.domElement.style.position = 'absolute';
 		stats.domElement.style.left = '0px';
-		stats.domElement.style.top = '0px';
+		stats.domElement.style.top = '30px';
 
 		/////////////////////////////////////
 
@@ -1735,11 +1721,13 @@ g.World = (function() {
             that.viewOccluder = geometry.viewOccluder;
 
             $pathLabel.text(that.texturePath);
-            THREE.ImageUtils.loadTexture(that.texturePath + '?t=' + t, 
-                THREE.UVMapping, function(texture) {
+
+            var textureLoader = new THREE.TextureLoader();
+            textureLoader.load(that.texturePath + '?t=' + t, function(texture) {
 
                 that.texture = texture;
 
+                texture.mapping = THREE.UVMapping;
                 texture.magFilter = THREE.NearestFilter;
                 texture.minFilter = THREE.NearestFilter;
                 texture.anisotropy = 16;

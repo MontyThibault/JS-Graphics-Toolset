@@ -16,7 +16,7 @@ A local `engine` object can be accessed within all code inside of the main wrapp
 	- Send geometry as datatextures
 	- New line segment collision algorithm
 	- JS edge ordering [CHECK]
-	- Clean up code [CHECK]  (in progress)
+	- Clean up code [CHECK]
 		- Look for automatic ways to do material updates
 			- Similar to map.js hack?
 
